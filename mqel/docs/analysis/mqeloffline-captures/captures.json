@@ -1,0 +1,4118 @@
+{
+ "origin": "https://github.com/Hedgehogscience/MQELOffline_cpp",
+ "commit": "93cc4da9500b0779bf7e3a8dd238546a91afb097",
+ "license": "MIT (Convery / Hedgehogscience)",
+ "note": "In C++-Quelltext eingebettete JSON-Antworten; mehrere offenbar Mitschnitte des Originalservers (ObjectIds/Daten Okt. 2016).",
+ "items": [
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:24",
+   "context": [],
+   "json": [
+    {
+     "SkuCode": "15224",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15226",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+     "LimitedQuantityNextUnlockQuantity": 5
+    },
+    {
+     "SkuCode": "15221",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 3,
+     "LimitedQuantityNextUnlockQuantity": 10
+    },
+    {
+     "SkuCode": "13911",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 3,
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15262",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 3,
+     "LimitedQuantityNextUnlockQuantity": 3
+    },
+    {
+     "SkuCode": "15229",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 4,
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15230",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 6,
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15263",
+     "LimitedQuantityNextUnlockCastleLevelRequirement": 8,
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16070",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16071",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16072",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16073",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16074",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16075",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16076",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16077",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16078",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16079",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16080",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16049",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15805",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15810",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15811",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15806",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15835",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15807",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15812",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15808",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15804",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15809",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15813",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15825",
+     "LimitedQuantityNextUnlockQuantity": 3
+    },
+    {
+     "SkuCode": "15834",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15872",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15974",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15957",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15814",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15892",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16067",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15815",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15816",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16068",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15827",
+     "LimitedQuantityNextUnlockQuantity": 6
+    },
+    {
+     "SkuCode": "15828",
+     "LimitedQuantityNextUnlockQuantity": 3
+    },
+    {
+     "SkuCode": "15817",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15856",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16006",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16055",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16058",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15818",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15819",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15855",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15890",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16059",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16060",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15820",
+     "LimitedQuantityNextUnlockQuantity": 3
+    },
+    {
+     "SkuCode": "15821",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15874",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15981",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16064",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16057",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16061",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15822",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16010",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15961",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15853",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15984",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16062",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16063",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15823",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "15830",
+     "LimitedQuantityNextUnlockQuantity": 3
+    },
+    {
+     "SkuCode": "15977",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16046",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16065",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "16066",
+     "LimitedQuantityNextUnlockQuantity": 2
+    },
+    {
+     "SkuCode": "15854",
+     "LimitedQuantityNextUnlockQuantity": 1
+    },
+    {
+     "SkuCode": "16032",
+     "LimitedQuantityNextUnlockQuantity": 1
+    }
+   ]
+  },
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:28",
+   "context": [
+    "LimitedQuantityNextUnlockQuantity",
+    "SkuCode",
+    "LimitedQuantityNextUnlockQuantity"
+   ],
+   "json": {
+    "ClientTrackingSettings": {
+     "ClientIdleInterval": 60,
+     "GameStateTrackingInterval": 300,
+     "IdleTimeThresholds": {
+      "None": 30,
+      "Build": 30,
+      "Attack": 30,
+      "AccountCreation": 30,
+      "Home": 30,
+      "AttackSelection": 30,
+      "Replay": 600,
+      "StartMenu": 30,
+      "Patcher": 30,
+      "UplayLinking": 30,
+      "StarterCastleSelection": 30,
+      "CastleVisit": 30
+     },
+     "GlanceViewDurationTriggerInSeconds": 5,
+     "EnabledNavigationTrackings": [
+      "game://forge/open"
+     ]
+    },
+    "XmppInfo": {
+     "Username": "3123971",
+     "Password": "AkiTXjIk+EqXzFWmFJGbug==",
+     "Domain": "mqel-live",
+     "Server": "chat.themightyquest.com",
+     "Port": 80,
+     "Enabled": true,
+     "ConferenceServer": "conference.mqel-live"
+    },
+    "PrimaryShopUrl": "https://www.themightyquest.com/%s/shop?game_token=%s&steamID=%s&steamTicket=%s&embedded=1",
+    "PrimaryShopProductPageUrl": "https://www.themightyquest.com/%s/shop/%s?game_token=%s&steamID=%s&steamTicket=%s&embedded=1",
+    "PrimaryShopPremiumPurchaseUrl": "https://www.themightyquest.com/%s/shop/category/blings?minimum_blings_quantity=%i&game_token=%s&steam_id=%s&steam_ticket=%s&embedded=1",
+    "PrimaryShopBlingsUrl": "https://www.themightyquest.com/%s/shop/category/blings?game_token=%s&steamID=%s&steamTicket=%s&embedded=1",
+    "PrimaryShopNonBlingsUrl": "https://www.themightyquest.com/%s/shop?game_token=%s&steamID=%s&steamTicket=%s&embedded=1&excluding_category=blings",
+    "FriendReferalUrl": "https://www.themightyquest.com/%s/invites/new?game_token=%s&embedded=1",
+    "WelcomePageSmallUrl": "https://www.themightyquest.com/%s/game_welcome_page/banner?game_token=%s",
+    "WelcomePageUrl": "https://www.themightyquest.com/%s/game_welcome_page?game_token=%s",
+    "ShowWelcomePage": true,
+    "MaintenanceUrl": "https://www.themightyquest.com/%s/blog"
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:54",
+   "context": [
+    "InGameCoinStorageCapacity",
+    "LifeForceStorageCapacity",
+    "InGameCoin"
+   ],
+   "json": {
+    "Draft": {
+     "AccountId": 3123895,
+     "AccountDisplayName": "Ness199X",
+     "LayoutId": 1,
+     "CreationDate": "2016-08-27T01:10:00Z",
+     "ModificationDate": "2016-08-27T01:19:08Z",
+     "Rooms": [
+      {
+       "X": 4,
+       "Y": 3,
+       "Id": 1,
+       "SpecContainerId": 21
+      },
+      {
+       "Buildings": [
+        {
+         "Rank": 1,
+         "RoomZoneId": 12,
+         "X": 3,
+         "Y": 3,
+         "Orientation": 2,
+         "Id": 1,
+         "SpecContainerId": 1
+        },
+        {
+         "Rank": 1,
+         "RoomZoneId": 11,
+         "Id": 2,
+         "SpecContainerId": 3
+        },
+        {
+         "Rank": 1,
+         "RoomZoneId": 13,
+         "Id": 3,
+         "SpecContainerId": 4
+        },
+        {
+         "RoomZoneId": 7,
+         "X": 3,
+         "Orientation": 3,
+         "Id": 4,
+         "SpecContainerId": 13
+        },
+        {
+         "RoomZoneId": 4,
+         "X": 3,
+         "Orientation": 3,
+         "Id": 6,
+         "SpecContainerId": 10
+        },
+        {
+         "RoomZoneId": 6,
+         "X": 3,
+         "Y": 3,
+         "Orientation": 2,
+         "Id": 7,
+         "SpecContainerId": 8
+        },
+        {
+         "RoomZoneId": 3,
+         "Y": 3,
+         "Orientation": 1,
+         "Id": 8,
+         "SpecContainerId": 9
+        }
+       ],
+       "X": 3,
+       "Y": 3,
+       "Id": 3,
+       "SpecContainerId": 25
+      }
+     ],
+     "ThemeId": 22
+    },
+    "Level": 1,
+    "InventoryThemes": [
+     1,
+     22
+    ],
+    "RoomNextIndex": 4,
+    "CreatureNextIndex": 33,
+    "TrapNextIndex": 4,
+    "DecorationNextIndex": 34,
+    "TriggerNextIndex": 1,
+    "BuildingNextIndex": 9,
+    "CastleStats": {
+     "TotalConstructionPoints": 55,
+     "MaxConstructionPoints": 55,
+     "WinRatio": 0.5,
+     "WinRatioDifficulty": 2
+    },
+    "CastleHeartRank": 1
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:58",
+   "context": [
+    "WinRatio",
+    "WinRatioDifficulty",
+    "CastleHeartRank"
+   ],
+   "json": {
+    "Draft": {
+     "AccountId": 3142975,
+     "LayoutId": 1,
+     "CreationDate": "2016-10-23T07:20:03Z",
+     "ModificationDate": "2016-10-23T07:20:03Z",
+     "ThemeId": 2
+    },
+    "InventoryThemes": [
+     2
+    ],
+    "RoomNextIndex": 1,
+    "CreatureNextIndex": 1,
+    "TrapNextIndex": 1,
+    "DecorationNextIndex": 1,
+    "TriggerNextIndex": 1,
+    "BuildingNextIndex": 1,
+    "CastleStats": {
+     "MaxConstructionPoints": 20,
+     "WinRatio": 0.5,
+     "WinRatioDifficulty": 2
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:80",
+   "context": [
+    "MaxConstructionPoints",
+    "WinRatio",
+    "WinRatioDifficulty"
+   ],
+   "json": {
+    "TotalCreaturesKilled": 193,
+    "AttackTotalIGCWon": 797,
+    "TotalCastlesLooted": 9,
+    "CastlesDefeated": {
+     "Medium": 5,
+     "Easy": 3,
+     "Hard": 1
+    },
+    "KilledCreatures": {
+     "1081": 78,
+     "1029": 7,
+     "1003": 1,
+     "1000": 21,
+     "1006": 3,
+     "1023": 4,
+     "1079": 8,
+     "1155": 1,
+     "1001": 24,
+     "1026": 9,
+     "1024": 7,
+     "1016": 5,
+     "1009": 6,
+     "1015": 13,
+     "1002": 6
+    },
+    "CurrencyAccumulation": {
+     "IGC": 1300,
+     "LifeForce": 1006
+    },
+    "DefeatCastleStrike": 3,
+    "TotalItemsLooted": 27,
+    "TotalPotionsConsumed": 5
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AccountInformationService.cpp:100",
+   "context": [
+    "DefeatCastleStrike",
+    "TotalItemsLooted",
+    "TotalPotionsConsumed"
+   ],
+   "json": [
+    {
+     "ObjectiveId": 300,
+     "LastStatusDate": "2016-08-27T01:50:22Z",
+     "Status": 2
+    },
+    {
+     "ObjectiveId": 301,
+     "LastStatusDate": "2016-09-03T02:00:26Z",
+     "Status": 2
+    },
+    {
+     "ObjectiveId": 302,
+     "LastStatusDate": "2016-09-03T02:00:26Z",
+     "Status": 1
+    }
+   ]
+  },
+  {
+   "source": "Source/Frontend/Services/AttackSelectionService.cpp:19",
+   "context": [],
+   "json": {
+    "Result": {
+     "BossCastle": {
+      "DefenderAccountSummary": {
+       "Id": 14,
+       "DisplayName": "Snotter_King",
+       "OasisNameId": 2645,
+       "AvatarId": 10,
+       "CastleLevel": 4
+      },
+      "CastleType": 1,
+      "Level": 4,
+      "IsNew": true,
+      "IsCastleAttackable": true,
+      "CastleThemeId": 5,
+      "CastleHeartRank": 4,
+      "WinRatioDifficulty": 2
+     },
+     "CastlesByLevel": [
+      {
+       "Level": 1,
+       "Castles": [
+        {
+         "DefenderAccountSummary": {
+          "Id": 3,
+          "DisplayName": "Hedgehog Castle",
+          "OasisNameId": 16675,
+          "AvatarId": 10,
+          "CastleLevel": 1
+         },
+         "CastleType": 1,
+         "Level": 1,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "CastleThemeId": 26,
+         "CastleHeartRank": 1
+        }
+       ]
+      },
+      {
+       "Level": 2,
+       "Castles": [
+        {
+         "DefenderAccountSummary": {
+          "Id": 100,
+          "DisplayName": "Tybalt's Farm",
+          "OasisNameId": 16658,
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "CastleType": 1,
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "CastleThemeId": 30,
+         "CastleHeartRank": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3119548,
+          "DisplayName": "Pablof50",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-18T11:27:41Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3137700,
+          "DisplayName": "CastleAuger",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-05T02:58:09Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "5808a38f5c983216c0b8113c",
+          "AccountId": 3142082,
+          "Comment": {
+           "Raw": "fern kmpfer haben gute chancen"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3142244,
+          "DisplayName": "RhazardEx",
+          "AvatarId": 10,
+          "CastleLevel": 2,
+          "TrophyScore": 18,
+          "GuildHeader": {
+           "Id": 152565,
+           "DisplayName": "PumbaNaIrina",
+           "Emblem": {
+            "Id": 36
+           }
+          }
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-21T12:07:22Z",
+         "TrophyScore": 18,
+         "CastleThemeId": 21,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3135690,
+          "DisplayName": "helmhammerhand25",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-28T23:15:28Z",
+         "CastleThemeId": 23,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "57fa74f75c98321d401d2032",
+          "AccountId": 3139004,
+          "Comment": {
+           "Raw": "extraordinary"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3141611,
+          "DisplayName": "chockhy",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-18T16:03:34Z",
+         "CastleThemeId": 23,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 2937327,
+          "DisplayName": "asdecge",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-06T17:06:37Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3131266,
+          "DisplayName": "Djordan95",
+          "AvatarId": 10,
+          "CastleLevel": 2,
+          "GuildHeader": {
+           "Id": 150843,
+           "DisplayName": "SAAAAALUT",
+           "Emblem": {
+            "Id": 26
+           }
+          }
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-03T00:02:00Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "5808d62a5c983200b46505e5",
+          "AccountId": 3141971,
+          "Comment": {
+           "Raw": "super"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 1978326,
+          "DisplayName": "jandrox16",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2014-11-05T22:17:49Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 1,
+         "LastComment": {
+          "AttackId": "5803839a5c98320eb4f2d0cf",
+          "AccountId": 3140908,
+          "Comment": {
+           "Raw": "jaaaa"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3137118,
+          "DisplayName": "Fydra",
+          "AvatarId": 10,
+          "CastleLevel": 2
+         },
+         "Level": 2,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-08T18:30:54Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 2,
+         "WinRatioDifficulty": 2
+        }
+       ]
+      },
+      {
+       "Level": 3,
+       "Castles": [
+        {
+         "DefenderAccountSummary": {
+          "Id": 101,
+          "DisplayName": "Fendrick's Farm",
+          "OasisNameId": 16659,
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "CastleType": 1,
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "CastleThemeId": 27,
+         "CastleHeartRank": 3
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 102,
+          "DisplayName": "Alien Outpost",
+          "OasisNameId": 16660,
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "CastleType": 1,
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "CastleThemeId": 28,
+         "CastleHeartRank": 3
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 103,
+          "DisplayName": "The Bank",
+          "OasisNameId": 16661,
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "CastleType": 1,
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2015-05-19T20:03:26Z",
+         "CastleThemeId": 29,
+         "CastleHeartRank": 3
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3134407,
+          "DisplayName": "Patrykce",
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-25T11:45:02Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580413bd5c98320eb4f4cede",
+          "AccountId": 3141468,
+          "Comment": {
+           "Raw": "no"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3138631,
+          "DisplayName": "Ravah`sLair",
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-09T04:44:49Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580ccfda5c98320c187f74cd",
+          "AccountId": 3143081,
+          "Comment": {
+           "Raw": "hah GAYYYYYYYYYYYYYY"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3138136,
+          "DisplayName": "Gandalf_White_Me",
+          "AvatarId": 10,
+          "CastleLevel": 3,
+          "GuildHeader": {
+           "Id": 151736,
+           "DisplayName": "Rakowisko",
+           "Emblem": {
+            "Id": 13
+           }
+          }
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-06T18:30:31Z",
+         "CastleThemeId": 1,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580afa275c9832101802c055",
+          "AccountId": 3140514,
+          "Comment": {
+           "Raw": "goody"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 2627746,
+          "DisplayName": "GavinsWorld",
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2015-03-17T16:08:46Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "5801f83b5c98321778c292a5",
+          "AccountId": 3140819,
+          "Comment": {
+           "Raw": "Whoop whoop!"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3134320,
+          "DisplayName": "Betaaldagen",
+          "AvatarId": 10,
+          "CastleLevel": 3,
+          "GuildHeader": {
+           "Id": 150901,
+           "DisplayName": "Baransu",
+           "Emblem": {
+            "Id": 10
+           }
+          }
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-25T07:28:53Z",
+         "CastleThemeId": 23,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "5808cb785c983200b464e75e",
+          "AccountId": 3142187,
+          "Comment": {
+           "Raw": "thanks "
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3140433,
+          "DisplayName": "Widlock",
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-16T14:02:19Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3140866,
+          "DisplayName": "Rohart",
+          "AvatarId": 10,
+          "CastleLevel": 3
+         },
+         "Level": 3,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-15T12:24:45Z",
+         "CastleThemeId": 21,
+         "CastleHeartRank": 3,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580ba0ae5c9832101804c049",
+          "AccountId": 3142794,
+          "Comment": {
+           "Raw": "naecm8"
+          },
+          "AvatarId": 10
+         }
+        }
+       ]
+      },
+      {
+       "Level": 4,
+       "Castles": [
+        {
+         "DefenderAccountSummary": {
+          "Id": 104,
+          "DisplayName": "The Squat",
+          "OasisNameId": 16667,
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "CastleType": 1,
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "CastleThemeId": 1,
+         "CastleHeartRank": 4
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3134205,
+          "DisplayName": "WarTrunk",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-24T21:10:03Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "57f8f1165c98320440bd34ad",
+          "AccountId": 3138553,
+          "Comment": {
+           "Raw": "easy2"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 2186102,
+          "DisplayName": "lucaaristide",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2014-09-06T12:17:23Z",
+         "CastleThemeId": 1,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 1,
+         "LastComment": {
+          "AttackId": "580ba9475c9832101804e3e7",
+          "AccountId": 3142803,
+          "Comment": {
+           "Raw": "NOT BAD"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 2596897,
+          "DisplayName": "IceTwist",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-28T17:28:40Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580bda795c983210180583a5",
+          "AccountId": 3142861,
+          "Comment": {
+           "Raw": "Great dude"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3134877,
+          "DisplayName": "LeafySinger242",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-28T20:30:42Z",
+         "CastleThemeId": 2,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580bbf0f5c98321018053102",
+          "AccountId": 3142838,
+          "Comment": {
+           "Raw": "bosta"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3142542,
+          "DisplayName": "187er",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-10-21T20:33:04Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3132675,
+          "DisplayName": "matheclaire",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-25T14:04:12Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580c625b5c98320c187e061e",
+          "AccountId": 3142970,
+          "Comment": {
+           "Raw": "noice"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3116805,
+          "DisplayName": "Laneyboii",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-08-11T18:36:31Z",
+         "CastleThemeId": 2,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 1,
+         "LastComment": {
+          "AttackId": "5800fa385c98321778c08c9a",
+          "AccountId": 3140626,
+          "Comment": {
+           "Raw": "ez"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3131677,
+          "DisplayName": "AndrewSmurph",
+          "AvatarId": 10,
+          "CastleLevel": 4,
+          "TrophyScore": 2,
+          "GuildHeader": {
+           "Id": 150498,
+           "DisplayName": "BobTheSmurphz",
+           "Emblem": {
+            "Id": 3
+           }
+          }
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-17T18:45:15Z",
+         "TrophyScore": 2,
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 2,
+         "LastComment": {
+          "AttackId": "580a82865c9832101801fcaf",
+          "AccountId": 3142554,
+          "Comment": {
+           "Raw": "not bead"
+          },
+          "AvatarId": 10
+         }
+        },
+        {
+         "DefenderAccountSummary": {
+          "Id": 3131817,
+          "DisplayName": "Buckingfish",
+          "AvatarId": 10,
+          "CastleLevel": 4
+         },
+         "Level": 4,
+         "IsNew": true,
+         "IsCastleAttackable": true,
+         "LastPublishedDate": "2016-09-18T22:06:33Z",
+         "CastleThemeId": 22,
+         "CastleHeartRank": 4,
+         "WinRatioDifficulty": 1,
+         "LastComment": {
+          "AttackId": "580d456f5c98320a9cb0d3e9",
+          "AccountId": 3143101,
+          "Comment": {
+           "Raw": "TooEasy"
+          },
+          "AvatarId": 10
+         }
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AttackSelectionService.cpp:29",
+   "context": [
+    "Raw",
+    "TooEasy",
+    "AvatarId"
+   ],
+   "json": {
+    "Result": {
+     "DefenderAccountSummary": {
+      "Id": 3,
+      "DisplayName": "Hedgehog Castle",
+      "OasisNameId": 16675
+     },
+     "CastleType": 1,
+     "RoomCount": 7,
+     "Difficulty": 2,
+     "PotentialLoot": {
+      "Xp": 90,
+      "TreasureRoomStealableIGC": 15,
+      "TreasureRoomStealableLifeForce": 15,
+      "IGC": 50,
+      "LifeForce": 50
+     },
+     "IsNew": true,
+     "IsCastleAttackable": true,
+     "AttackabilityStatus": 1,
+     "AttackType": 5,
+     "Level": 1,
+     "Stats": {
+      "TotalConstructionPoints": 58,
+      "MaxConstructionPoints": 58,
+      "TrapCount": 13,
+      "WinRatio": 0.5,
+      "WinRatioDifficulty": 2
+     },
+     "VictoryConditionRewardRatios": [
+      1,
+      0.75,
+      0.5
+     ]
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AttackService.cpp:48",
+   "context": [
+    "IsTutorialCastle"
+   ],
+   "json": [
+    {
+     "Id": 45,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 1,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 46,
+     "Gold": 9,
+     "Xp": 2,
+     "LifeForce": 1,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 47,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 2,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 48,
+     "Gold": 1,
+     "Xp": 2,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 49,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 1,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 50,
+     "Gold": 3,
+     "Xp": 2,
+     "LifeForce": 5,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 68,
+     "Gold": 2,
+     "Xp": 2,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 58,
+     "Gold": 2,
+     "Xp": 8,
+     "LifeForce": 4,
+     "HealthOrbFragments": 16
+    },
+    {
+     "Id": 65,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 2,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 56,
+     "Gold": 1,
+     "Xp": 12,
+     "LifeForce": 1,
+     "HealthOrbFragments": 24,
+     "InventoryItems": [
+      {
+       "$type": "HyperQuest.GameServer.Contracts.HeroEquipmentItem, HyperQuest.GameServer.Contracts",
+       "ItemLevel": 1,
+       "ArchetypeId": 9,
+       "PrimaryStatsModifiers": [
+        0.354,
+        0.998,
+        0.021
+       ],
+       "Effects": [
+        {
+         "Id": 22,
+         "Level": 1
+        }
+       ],
+       "IsSellable": true,
+       "TemplateId": 37
+      },
+      {
+       "$type": "HyperQuest.GameServer.Contracts.HeroEquipmentItem, HyperQuest.GameServer.Contracts",
+       "ItemLevel": 1,
+       "ArchetypeId": 8,
+       "PrimaryStatsModifiers": [
+        0.375,
+        0.364,
+        0.821
+       ],
+       "IsSellable": true,
+       "TemplateId": 40
+      }
+     ]
+    },
+    {
+     "Id": 44,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 5,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 69,
+     "Gold": 2,
+     "Xp": 2,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 81,
+     "Gold": 1,
+     "Xp": 2,
+     "LifeForce": 1,
+     "HealthOrbFragments": 4
+    },
+    {
+     "Id": 70,
+     "Gold": 2,
+     "Xp": 2,
+     "LifeForce": 1,
+     "HealthOrbFragments": 1
+    },
+    {
+     "Id": 59,
+     "Gold": 3,
+     "Xp": 8,
+     "LifeForce": 2,
+     "HealthOrbFragments": 16
+    },
+    {
+     "Id": 57,
+     "Gold": 1,
+     "Xp": 8,
+     "LifeForce": 5,
+     "HealthOrbFragments": 16
+    },
+    {
+     "Id": 66,
+     "Gold": 2,
+     "Xp": 2,
+     "LifeForce": 3,
+     "HealthOrbFragments": 1
+    }
+   ]
+  },
+  {
+   "source": "Source/Frontend/Services/AttackService.cpp:52",
+   "context": [
+    "Xp",
+    "LifeForce",
+    "HealthOrbFragments"
+   ],
+   "json": [
+    {
+     "Id": 1,
+     "InventoryItems": [
+      {
+       "$type": "HyperQuest.GameServer.Contracts.HeroEquipmentItem, HyperQuest.GameServer.Contracts",
+       "ItemLevel": 1,
+       "ArchetypeId": 2,
+       "PrimaryStatsModifiers": [
+        1,
+        1,
+        1
+       ],
+       "IsSellable": true,
+       "TemplateId": 53
+      }
+     ]
+    },
+    {
+     "Id": 2
+    }
+   ]
+  },
+  {
+   "source": "Source/Frontend/Services/AttackService.cpp:173",
+   "context": [
+    "CastleValidationDuration",
+    "Result",
+    "IsResurrectionAllowed"
+   ],
+   "json": {
+    "Notifications": [
+     {
+      "$type": "HyperQuest.GameServer.Contracts.WalletUpdatedNotification, HyperQuest.GameServer.Contracts",
+      "Amounts": [
+       {
+        "CurrencyType": 2,
+        "Amount": 33
+       },
+       {
+        "CurrencyType": 4,
+        "Amount": 33
+       }
+      ],
+      "NotificationType": 24
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.HeroXpChangedNotification, HyperQuest.GameServer.Contracts",
+      "HeroSpecContainerId": 4,
+      "XpAdded": 60,
+      "TotalXp": 60,
+      "Level": 1,
+      "NotificationType": 43
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 1,
+         "ArchetypeId": 9,
+         "PrimaryStatsModifiers": [
+          0.354,
+          0.998,
+          0.021
+         ],
+         "Effects": [
+          {
+           "Id": 22,
+           "Level": 1
+          }
+         ],
+         "IsSellable": true,
+         "TemplateId": 37
+        },
+        "ItemType": 3,
+        "ObjectId": "580d50cd5c98320a9cb0e719"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 1,
+         "ArchetypeId": 8,
+         "PrimaryStatsModifiers": [
+          0.375,
+          0.364,
+          0.821
+         ],
+         "IsSellable": true,
+         "TemplateId": 40
+        },
+        "ItemType": 3,
+        "ObjectId": "580d50cd5c98320a9cb0e71a"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 1,
+         "ArchetypeId": 2,
+         "PrimaryStatsModifiers": [
+          1,
+          1,
+          1
+         ],
+         "IsSellable": true,
+         "TemplateId": 53
+        },
+        "ItemType": 3,
+        "ObjectId": "580d50cd5c98320a9cb0e71b"
+       }
+      ],
+      "NotificationType": 111
+     }
+    ],
+    "Result": {
+     "AttackId": "580d504f5c98320c1881325a",
+     "DefenderCastleId": 2,
+     "DefenderCastleType": 1,
+     "DefenderOasisNameId": 2325,
+     "Duration": 119100,
+     "InitialGold": 1000,
+     "HeroLevel": 1,
+     "TotalXp": 60,
+     "TotalGold": 33,
+     "TotalLifeForce": 33,
+     "KillsXp": 60,
+     "KillsGold": 33,
+     "KillsLifeForce": 33,
+     "CastleRatingFreePrize": {
+      "CurrencyType": 2,
+      "Amount": 50
+     },
+     "IsTutorial": true,
+     "IsCastleAttackable": true,
+     "UpdatedAccountStats": {
+      "TotalCreaturesKilled": 16,
+      "AttackTotalIGCWon": 33,
+      "TotalCastlesLooted": 1,
+      "CastlesDefeated": {
+       "Medium": 1
+      },
+      "KilledCreatures": {
+       "1081": 12,
+       "1029": 3,
+       "1003": 1
+      },
+      "CurrencyAccumulation": {
+       "IGC": 33,
+       "LifeForce": 33
+      },
+      "DefeatCastleStrike": 1,
+      "TotalItemsLooted": 3
+     },
+     "TrophyScoreVariation": {},
+     "VictoryConditionRewardRatios": [
+      1,
+      0.75,
+      0.5
+     ],
+     "VictoryConditionLevel": 1,
+     "MaxVictoryConditionLevel": 1,
+     "EnterTreasureRoom": true,
+     "VictoryConditionType": 1
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AttackService.cpp:177",
+   "context": [
+    "MaxVictoryConditionLevel",
+    "EnterTreasureRoom",
+    "VictoryConditionType"
+   ],
+   "json": {
+    "Notifications": [
+     {
+      "$type": "HyperQuest.GameServer.Contracts.WalletUpdatedNotification, HyperQuest.GameServer.Contracts",
+      "Amounts": [
+       {
+        "CurrencyType": 2
+       },
+       {
+        "CurrencyType": 4,
+        "Amount": 29
+       }
+      ],
+      "NotificationType": 24
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.HeroXpChangedNotification, HyperQuest.GameServer.Contracts",
+      "HeroSpecContainerId": 4,
+      "XpAdded": 66,
+      "TotalXp": 1868,
+      "Level": 4,
+      "NotificationType": 43
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1000
+        },
+        "ItemType": 4,
+        "ObjectId": "58043d945c98320eb4f50727"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 2,
+         "ArchetypeId": 4,
+         "PrimaryStatsModifiers": [
+          0.566,
+          0.342,
+          0.122
+         ],
+         "IsSellable": true,
+         "TemplateId": 17
+        },
+        "ItemType": 3,
+        "ObjectId": "58043d945c98320eb4f50728"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 3,
+         "ArchetypeId": 8,
+         "PrimaryStatsModifiers": [
+          0.98,
+          0.24,
+          0.777
+         ],
+         "IsSellable": true,
+         "TemplateId": 44
+        },
+        "ItemType": 3,
+        "ObjectId": "58043d945c98320eb4f50729"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 4,
+         "ArchetypeId": 3,
+         "PrimaryStatsModifiers": [
+          0.938,
+          0.568,
+          0.491
+         ],
+         "IsSellable": true,
+         "TemplateId": 205
+        },
+        "ItemType": 3,
+        "ObjectId": "58043d945c98320eb4f5072a"
+       }
+      ],
+      "NotificationType": 111
+     }
+    ],
+    "Result": {
+     "AttackId": "58043d5d5c98320eb4f506fa",
+     "DefenderCastleId": 3000947,
+     "DefenderAccountDisplayName": "jonsie111",
+     "Duration": 49933,
+     "InitialXp": 1802,
+     "InitialGold": 2000,
+     "HeroLevel": 4,
+     "TotalXp": 66,
+     "TotalGold": 103,
+     "TotalLifeForce": 29,
+     "KillsXp": 66,
+     "KillsGold": 29,
+     "KillsLifeForce": 29,
+     "TreasureRoomGold": 7,
+     "PillagedIGCMinesAmount": 67,
+     "PillagedIGCMineCount": 1,
+     "CastleRatingFreePrize": {
+      "CurrencyType": 2,
+      "Amount": 50
+     },
+     "IsCastleAttackable": true,
+     "UpdatedAccountStats": {
+      "TotalCreaturesKilled": 202,
+      "AttackTotalIGCWon": 833,
+      "TotalCastlesLooted": 10,
+      "CastlesDefeated": {
+       "Medium": 5,
+       "Easy": 4,
+       "Hard": 1
+      },
+      "KilledCreatures": {
+       "1081": 86,
+       "1029": 7,
+       "1003": 2,
+       "1000": 21,
+       "1006": 3,
+       "1023": 4,
+       "1079": 8,
+       "1155": 1,
+       "1001": 24,
+       "1026": 9,
+       "1024": 7,
+       "1016": 5,
+       "1009": 6,
+       "1015": 13,
+       "1002": 6
+      },
+      "CurrencyAccumulation": {
+       "IGC": 1300,
+       "LifeForce": 1035
+      },
+      "DefeatCastleStrike": 4,
+      "TotalItemsLooted": 31,
+      "TotalPotionsConsumed": 5
+     },
+     "TrophyScoreVariation": {},
+     "VictoryConditionRewardRatios": [
+      1,
+      0.75,
+      0.5
+     ],
+     "VictoryConditionLevel": 3,
+     "DefenderLossIGC": 7,
+     "EnterTreasureRoom": true,
+     "CastleShieldedByAttacker": true,
+     "VictoryConditionType": 1,
+     "RevengeEnabled": true,
+     "CastleValidationDuration": 44233,
+     "LastComment": {
+      "AttackId": "580238555c98321778c363ba",
+      "AccountId": 3140910,
+      "Comment": {
+       "Raw": "for beginners..."
+      },
+      "AvatarId": 10
+     }
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/AttackService.cpp:181",
+   "context": [
+    "Comment",
+    "Raw",
+    "AvatarId"
+   ],
+   "json": {
+    "Notifications": [
+     {
+      "$type": "HyperQuest.GameServer.Contracts.WalletUpdatedNotification, HyperQuest.GameServer.Contracts",
+      "Amounts": [
+       {
+        "CurrencyType": 2
+       },
+       {
+        "CurrencyType": 4,
+        "Amount": 165
+       }
+      ],
+      "NotificationType": 24
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.HeroXpChangedNotification, HyperQuest.GameServer.Contracts",
+      "HeroSpecContainerId": 4,
+      "XpAdded": 333,
+      "TotalXp": 2201,
+      "Level": 4,
+      "NotificationType": 43
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 3,
+         "ArchetypeId": 10,
+         "PrimaryStatsModifiers": [
+          0.979,
+          0.193,
+          0.183
+         ],
+         "IsSellable": true,
+         "TemplateId": 318
+        },
+        "ItemType": 3,
+        "ObjectId": "58043e625c98320eb4f507ba"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxHeroEquipmentItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "ItemLevel": 3,
+         "ArchetypeId": 4,
+         "PrimaryStatsModifiers": [
+          0.381,
+          0.771,
+          0.188
+         ],
+         "IsSellable": true,
+         "TemplateId": 45
+        },
+        "ItemType": 3,
+        "ObjectId": "58043e625c98320eb4f507bb"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.ObjectiveCompletedNotification, HyperQuest.GameServer.Contracts",
+      "ObjectiveId": 302,
+      "NotificationType": 14
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1003
+        },
+        "ItemType": 4,
+        "ObjectId": "58043e625c98320eb4f507bc"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1003
+        },
+        "ItemType": 4,
+        "ObjectId": "58043e625c98320eb4f507bd"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1001
+        },
+        "ItemType": 4,
+        "ObjectId": "58043e625c98320eb4f507be"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1001
+        },
+        "ItemType": 4,
+        "ObjectId": "58043e625c98320eb4f507bf"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.InboxItemsAddedNotification, HyperQuest.GameServer.Contracts",
+      "InboxItems": [
+       {
+        "$type": "HyperQuest.GameServer.Contracts.InboxConsumableItem, HyperQuest.GameServer.Contracts",
+        "HeroItem": {
+         "StackCount": 1,
+         "TemplateId": 1000
+        },
+        "ItemType": 4,
+        "ObjectId": "58043e625c98320eb4f507c0"
+       }
+      ],
+      "NotificationType": 111
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.ObjectiveUnlockedNotification, HyperQuest.GameServer.Contracts",
+      "AccountObjective": {
+       "ObjectiveId": 303,
+       "LastStatusDate": "2016-10-17T02:58:42Z",
+       "Status": 1
+      },
+      "NotificationType": 17
+     }
+    ],
+    "Result": {
+     "AttackId": "58043dab5c98320eb4f50743",
+     "DefenderCastleId": 101,
+     "DefenderCastleType": 1,
+     "DefenderAccountDisplayName": "Fendrick's Farm",
+     "DefenderOasisNameId": 16659,
+     "Duration": 172600,
+     "InitialXp": 1868,
+     "InitialGold": 2000,
+     "HeroLevel": 4,
+     "TotalXp": 333,
+     "TotalGold": 179,
+     "TotalLifeForce": 165,
+     "KillsXp": 333,
+     "KillsGold": 133,
+     "KillsLifeForce": 119,
+     "TreasureRoomGold": 46,
+     "TreasureRoomLifeForce": 46,
+     "CastleRatingFreePrize": {
+      "CurrencyType": 2,
+      "Amount": 75
+     },
+     "IsTutorial": true,
+     "IsCastleAttackable": true,
+     "UpdatedAccountStats": {
+      "TotalCreaturesKilled": 243,
+      "AttackTotalIGCWon": 1012,
+      "TotalCastlesLooted": 11,
+      "CastlesDefeated": {
+       "Medium": 5,
+       "Easy": 5,
+       "Hard": 1
+      },
+      "KilledCreatures": {
+       "1081": 103,
+       "1029": 7,
+       "1003": 5,
+       "1000": 24,
+       "1006": 3,
+       "1023": 4,
+       "1079": 8,
+       "1155": 1,
+       "1001": 26,
+       "1026": 9,
+       "1024": 7,
+       "1016": 5,
+       "1009": 6,
+       "1015": 13,
+       "1002": 6,
+       "1028": 3,
+       "1007": 4,
+       "1090": 8,
+       "1087": 1
+      },
+      "CurrencyAccumulation": {
+       "IGC": 1300,
+       "LifeForce": 1200
+      },
+      "DefeatCastleStrike": 5,
+      "TotalItemsLooted": 33,
+      "TotalPotionsConsumed": 5
+     },
+     "TrophyScoreVariation": {},
+     "VictoryConditionRewardRatios": [
+      1,
+      0.75,
+      0.5
+     ],
+     "VictoryConditionLevel": 1,
+     "MaxVictoryConditionLevel": 1,
+     "EnterTreasureRoom": true,
+     "VictoryConditionType": 1
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/CastleForSaleService.cpp:20",
+   "context": [],
+   "json": {
+    "Result": {
+     "CastlesForSale": [
+      {
+       "SaleId": 1,
+       "CastleInfoSummary": {
+        "DefenderAccountSummary": {
+         "Id": 1000,
+         "DisplayName": "Theme A",
+         "AvatarId": 10,
+         "CastleLevel": 1
+        },
+        "CastleType": 1,
+        "Level": 1,
+        "IsNew": true,
+        "IsCastleAttackable": true,
+        "LastPublishedDate": "2014-07-03T17:34:20Z",
+        "CastleThemeId": 21,
+        "CastleHeartRank": 1
+       },
+       "CastleTitleOasisID": 15328,
+       "CastleDescriptionOasisID": 15332,
+       "FakePriceOasisID": 15336,
+       "CastleIconUrl": "UI_Common_CastleSelection_Preview:A",
+       "CanBePurchased": true,
+       "SpawnPlotId": 1
+      },
+      {
+       "SaleId": 2,
+       "CastleInfoSummary": {
+        "DefenderAccountSummary": {
+         "Id": 1001,
+         "DisplayName": "Theme B",
+         "AvatarId": 10,
+         "CastleLevel": 1
+        },
+        "CastleType": 1,
+        "Level": 1,
+        "IsNew": true,
+        "IsCastleAttackable": true,
+        "LastPublishedDate": "2014-07-03T17:34:20Z",
+        "CastleThemeId": 22,
+        "CastleHeartRank": 1
+       },
+       "CastleTitleOasisID": 15329,
+       "CastleDescriptionOasisID": 15333,
+       "FakePriceOasisID": 15336,
+       "CastleIconUrl": "UI_Common_CastleSelection_Preview:B",
+       "CanBePurchased": true,
+       "SpawnPlotId": 2
+      },
+      {
+       "SaleId": 3,
+       "CastleInfoSummary": {
+        "DefenderAccountSummary": {
+         "Id": 1002,
+         "DisplayName": "Theme C",
+         "AvatarId": 10,
+         "CastleLevel": 1
+        },
+        "CastleType": 1,
+        "Level": 1,
+        "IsNew": true,
+        "IsCastleAttackable": true,
+        "LastPublishedDate": "2014-07-03T17:34:20Z",
+        "CastleThemeId": 23,
+        "CastleHeartRank": 1
+       },
+       "CastleTitleOasisID": 15330,
+       "CastleDescriptionOasisID": 15334,
+       "FakePriceOasisID": 15336,
+       "CastleIconUrl": "UI_Common_CastleSelection_Preview:C",
+       "CanBePurchased": true,
+       "SpawnPlotId": 3
+      },
+      {
+       "SaleId": 4,
+       "CastleInfoSummary": {
+        "DefenderAccountSummary": {
+         "Id": 1003,
+         "DisplayName": "Pink Castle",
+         "AvatarId": 10,
+         "CastleLevel": 1
+        },
+        "CastleType": 1,
+        "Level": 1,
+        "IsNew": true,
+        "IsCastleAttackable": true,
+        "LastPublishedDate": "2014-07-03T17:34:20Z",
+        "CastleThemeId": 9,
+        "CastleHeartRank": 1
+       },
+       "CastleTitleOasisID": 15331,
+       "CastleDescriptionOasisID": 15335,
+       "FakePriceOasisID": 15337,
+       "CastleIconUrl": "UI_Common_CastleSelection_Preview:Firesly",
+       "CastleModelIndex": 1,
+       "IsInteractive": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/CastleForSaleService.cpp:28",
+   "context": [
+    "CastleIconUrl",
+    "CastleModelIndex",
+    "IsInteractive"
+   ],
+   "json": {
+    "GlobalNotifications": [
+     {
+      "$type": "HyperQuest.GameServer.Contracts.SeasonalCompetitionStartedNotification, HyperQuest.GameServer.Contracts",
+      "StartDate": "2016-10-24T00:00:00Z",
+      "Id": "580d4f005c98320a9cb0e40f",
+      "NotificationType": 4
+     }
+    ],
+    "Result": {
+     "Draft": {
+      "$type": "HyperQuest.GameServer.Contracts.UbisoftCastle, HyperQuest.GameServer.Contracts",
+      "IsForSaleCastle": true,
+      "ForceCastleLevelOnBuildables": true,
+      "AccountId": 1003,
+      "AccountDisplayName": "Pink Castle",
+      "LayoutId": 1,
+      "CreationDate": "2014-03-07T00:07:28Z",
+      "ModificationDate": "2014-07-03T17:34:20Z",
+      "Rooms": [
+       {
+        "Creatures": [
+         {
+          "RoomZoneId": 1,
+          "X": 19,
+          "Y": 10,
+          "Orientation": 3,
+          "Id": 55,
+          "SpecContainerId": 1077
+         }
+        ],
+        "Traps": [
+         {
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 29,
+          "Orientation": 3,
+          "Id": 504,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 29,
+          "Orientation": 3,
+          "Id": 505,
+          "SpecContainerId": 67
+         },
+         {
+          "PowerSupplyCastleBuildableId": 505,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 35,
+          "Id": 506,
+          "SpecContainerId": 1015
+         },
+         {
+          "PowerSupplyCastleBuildableId": 504,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 34,
+          "Orientation": 2,
+          "Id": 507,
+          "SpecContainerId": 1015
+         },
+         {
+          "PowerSupplyCastleBuildableId": 505,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 33,
+          "Id": 508,
+          "SpecContainerId": 1015
+         }
+        ],
+        "Buildings": [
+         {
+          "Rank": 1,
+          "RoomZoneId": 12,
+          "X": 3,
+          "Y": 3,
+          "Orientation": 2,
+          "Id": 1,
+          "SpecContainerId": 1
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 11,
+          "Id": 2,
+          "SpecContainerId": 3
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 13,
+          "Id": 3,
+          "SpecContainerId": 4
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 7,
+          "X": 3,
+          "Orientation": 3,
+          "Id": 4,
+          "SpecContainerId": 13
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 4,
+          "X": 3,
+          "Orientation": 3,
+          "Id": 6,
+          "SpecContainerId": 10
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 6,
+          "X": 3,
+          "Y": 3,
+          "Orientation": 2,
+          "Id": 7,
+          "SpecContainerId": 8
+         },
+         {
+          "Rank": 3,
+          "RoomZoneId": 3,
+          "Y": 3,
+          "Orientation": 1,
+          "Id": 8,
+          "SpecContainerId": 9
+         }
+        ],
+        "X": 5,
+        "Y": 5,
+        "Id": 40,
+        "SpecContainerId": 25
+       },
+       {
+        "Creatures": [
+         {
+          "AggroPropagationOffsetX": -0.7993546,
+          "AggroPropagationOffsetZ": 4.199974,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 32,
+          "Orientation": 2,
+          "Id": 98,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -1.88533,
+          "AggroPropagationOffsetZ": -4.521896,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 33,
+          "Id": 103,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -0.9605103,
+          "AggroPropagationOffsetZ": -4.506786,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 32,
+          "Id": 108,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -1.880539,
+          "AggroPropagationOffsetZ": 4.282448,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 33,
+          "Orientation": 2,
+          "Id": 104,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": 2.181244,
+          "AggroPropagationOffsetZ": -4.499131,
+          "RoomZoneId": 1,
+          "X": 14,
+          "Y": 2,
+          "Orientation": 3,
+          "Id": 136,
+          "SpecContainerId": 1004
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 31,
+          "Id": 357,
+          "SpecContainerId": 440
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 31,
+          "Orientation": 2,
+          "Id": 358,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": 1.892274,
+          "AggroPropagationOffsetZ": 3.093549,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 30,
+          "Id": 107,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -1.934516,
+          "AggroPropagationOffsetZ": 4.403104,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 30,
+          "Orientation": 2,
+          "Id": 105,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -2.006975,
+          "AggroPropagationOffsetZ": -4.54755,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 34,
+          "Id": 109,
+          "SpecContainerId": 440
+         },
+         {
+          "AggroPropagationOffsetX": -1.983501,
+          "AggroPropagationOffsetZ": 4.496215,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 34,
+          "Orientation": 2,
+          "Id": 106,
+          "SpecContainerId": 440
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 21,
+          "Y": 9,
+          "Orientation": 2,
+          "Id": 714,
+          "SpecContainerId": 1017
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 2,
+          "Orientation": 3,
+          "Id": 715,
+          "SpecContainerId": 1004
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 2,
+          "Orientation": 3,
+          "Id": 716,
+          "SpecContainerId": 1004
+         }
+        ],
+        "Traps": [
+         {
+          "PowerSupplyCastleBuildableId": 525,
+          "RoomZoneId": 1,
+          "X": 10,
+          "Y": 21,
+          "Orientation": 3,
+          "Id": 167,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 525,
+          "RoomZoneId": 1,
+          "X": 8,
+          "Y": 17,
+          "Orientation": 3,
+          "Id": 168,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 512,
+          "RoomZoneId": 1,
+          "X": 10,
+          "Y": 11,
+          "Orientation": 3,
+          "Id": 169,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 512,
+          "RoomZoneId": 1,
+          "X": 10,
+          "Y": 9,
+          "Orientation": 3,
+          "Id": 217,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 526,
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 33,
+          "Orientation": 3,
+          "Id": 368,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 512,
+          "RoomZoneId": 1,
+          "X": 8,
+          "Y": 6,
+          "Orientation": 3,
+          "Id": 369,
+          "SpecContainerId": 1000
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 6,
+          "Orientation": 3,
+          "Id": 512,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 8,
+          "Y": 25,
+          "Orientation": 3,
+          "Id": 525,
+          "SpecContainerId": 67
+         }
+        ],
+        "Decorations": [
+         {
+          "RoomZoneId": 1,
+          "X": 21,
+          "Y": 6,
+          "Orientation": 3,
+          "Id": 50,
+          "SpecContainerId": 136
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 21,
+          "Y": 7,
+          "Orientation": 2,
+          "Id": 51,
+          "SpecContainerId": 136
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 20,
+          "Y": 10,
+          "Id": 52,
+          "SpecContainerId": 136
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 6,
+          "Orientation": 2,
+          "Id": 121,
+          "SpecContainerId": 138,
+          "SkuCode": "15149"
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 10,
+          "Orientation": 3,
+          "Id": 122,
+          "SpecContainerId": 137,
+          "SkuCode": "15148"
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 9,
+          "Orientation": 2,
+          "Id": 123,
+          "SpecContainerId": 149,
+          "SkuCode": "15489"
+         }
+        ],
+        "X": 7,
+        "Y": 5,
+        "Id": 50,
+        "SpecContainerId": 7085
+       },
+       {
+        "Traps": [
+         {
+          "PowerSupplyCastleBuildableId": 504,
+          "RoomZoneId": 1,
+          "X": 16,
+          "Orientation": 3,
+          "Id": 165,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 505,
+          "RoomZoneId": 1,
+          "X": 18,
+          "Orientation": 3,
+          "Id": 329,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 512,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 35,
+          "Orientation": 2,
+          "Id": 164,
+          "SpecContainerId": 1002
+         },
+         {
+          "PowerSupplyCastleBuildableId": 504,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 1,
+          "Orientation": 3,
+          "Id": 509,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 511,
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 5,
+          "Orientation": 3,
+          "Id": 510,
+          "SpecContainerId": 1005
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 13,
+          "Orientation": 3,
+          "Id": 511,
+          "SpecContainerId": 67
+         },
+         {
+          "PowerSupplyCastleBuildableId": 511,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 9,
+          "Orientation": 3,
+          "Id": 513,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 516,
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 14,
+          "Orientation": 3,
+          "Id": 514,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 516,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 19,
+          "Orientation": 3,
+          "Id": 515,
+          "SpecContainerId": 1005
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 19,
+          "Orientation": 3,
+          "Id": 516,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 30,
+          "Orientation": 3,
+          "Id": 517,
+          "SpecContainerId": 67
+         },
+         {
+          "PowerSupplyCastleBuildableId": 517,
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 23,
+          "Orientation": 3,
+          "Id": 518,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 517,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 27,
+          "Orientation": 3,
+          "Id": 519,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 511,
+          "RoomZoneId": 1,
+          "X": 17,
+          "Y": 7,
+          "Orientation": 3,
+          "Id": 520,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 511,
+          "RoomZoneId": 1,
+          "X": 17,
+          "Y": 14,
+          "Orientation": 3,
+          "Id": 521,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 516,
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 21,
+          "Orientation": 3,
+          "Id": 522,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 516,
+          "RoomZoneId": 1,
+          "X": 17,
+          "Y": 25,
+          "Orientation": 3,
+          "Id": 523,
+          "SpecContainerId": 1000
+         },
+         {
+          "PowerSupplyCastleBuildableId": 517,
+          "RoomZoneId": 1,
+          "X": 18,
+          "Y": 29,
+          "Orientation": 3,
+          "Id": 524,
+          "SpecContainerId": 1000
+         }
+        ],
+        "Decorations": [
+         {
+          "RoomZoneId": 1,
+          "X": 14,
+          "Y": 34,
+          "Orientation": 3,
+          "Id": 74,
+          "SpecContainerId": 139
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 15,
+          "Y": 34,
+          "Orientation": 1,
+          "Id": 75,
+          "SpecContainerId": 139
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 34,
+          "Orientation": 3,
+          "Id": 76,
+          "SpecContainerId": 139
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 20,
+          "Y": 34,
+          "Orientation": 3,
+          "Id": 77,
+          "SpecContainerId": 139
+         }
+        ],
+        "X": 6,
+        "Y": 5,
+        "Id": 56,
+        "SpecContainerId": 2006
+       },
+       {
+        "Creatures": [
+         {
+          "AggroPropagationOffsetX": 0.4310836,
+          "AggroPropagationOffsetZ": 0.8949127,
+          "RoomZoneId": 1,
+          "X": 29,
+          "Y": 30,
+          "Orientation": 1,
+          "Id": 84,
+          "SpecContainerId": 1012
+         },
+         {
+          "AggroPropagationOffsetX": 3.833536,
+          "AggroPropagationOffsetZ": 0.5860186,
+          "RoomZoneId": 1,
+          "X": 27,
+          "Y": 25,
+          "Orientation": 1,
+          "Id": 687,
+          "SpecContainerId": 1003
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 32,
+          "Y": 22,
+          "Orientation": 1,
+          "Id": 708,
+          "SpecContainerId": 1088
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 30,
+          "Y": 22,
+          "Orientation": 1,
+          "Id": 709,
+          "SpecContainerId": 1088
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 33,
+          "Y": 13,
+          "Orientation": 3,
+          "Id": 710,
+          "SpecContainerId": 1088
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 31,
+          "Y": 13,
+          "Orientation": 3,
+          "Id": 711,
+          "SpecContainerId": 1088
+         }
+        ],
+        "Traps": [
+         {
+          "PowerSupplyCastleBuildableId": 526,
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 31,
+          "Orientation": 1,
+          "Id": 366,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 526,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 32,
+          "Id": 371,
+          "SpecContainerId": 1002
+         },
+         {
+          "PowerSupplyCastleBuildableId": 530,
+          "RoomZoneId": 1,
+          "X": 34,
+          "Y": 21,
+          "Id": 349,
+          "SpecContainerId": 1003
+         },
+         {
+          "PowerSupplyCastleBuildableId": 530,
+          "RoomZoneId": 1,
+          "X": 34,
+          "Y": 13,
+          "Id": 346,
+          "SpecContainerId": 1003
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 12,
+          "Y": 30,
+          "Orientation": 1,
+          "Id": 526,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 25,
+          "Y": 19,
+          "Orientation": 1,
+          "Id": 530,
+          "SpecContainerId": 67
+         }
+        ],
+        "Decorations": [
+         {
+          "RoomZoneId": 1,
+          "X": 10,
+          "Y": 19,
+          "Orientation": 1,
+          "Id": 6,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 9,
+          "Y": 23,
+          "Orientation": 1,
+          "Id": 7,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 7,
+          "Y": 23,
+          "Orientation": 3,
+          "Id": 9,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 6,
+          "Y": 24,
+          "Orientation": 3,
+          "Id": 10,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 8,
+          "Y": 24,
+          "Orientation": 1,
+          "Id": 12,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 9,
+          "Y": 17,
+          "Orientation": 1,
+          "Id": 19,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 7,
+          "Y": 19,
+          "Orientation": 2,
+          "Id": 31,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 6,
+          "Y": 17,
+          "Orientation": 3,
+          "Id": 32,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 3,
+          "Y": 14,
+          "Id": 33,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 4,
+          "Y": 15,
+          "Id": 34,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 4,
+          "Y": 17,
+          "Orientation": 3,
+          "Id": 35,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 6,
+          "Y": 16,
+          "Orientation": 1,
+          "Id": 36,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 3,
+          "Y": 20,
+          "Orientation": 1,
+          "Id": 37,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 2,
+          "Y": 22,
+          "Orientation": 3,
+          "Id": 38,
+          "SpecContainerId": 141
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 8,
+          "Y": 18,
+          "Orientation": 1,
+          "Id": 40,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 5,
+          "Y": 13,
+          "Orientation": 1,
+          "Id": 41,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 4,
+          "Y": 22,
+          "Orientation": 1,
+          "Id": 42,
+          "SpecContainerId": 140
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 2,
+          "Y": 13,
+          "Orientation": 1,
+          "Id": 120,
+          "SpecContainerId": 141
+         }
+        ],
+        "X": 8,
+        "Y": 5,
+        "Orientation": 2,
+        "Id": 71,
+        "SpecContainerId": 7103
+       },
+       {
+        "X": 8,
+        "Y": 7,
+        "Orientation": 3,
+        "Id": 73,
+        "SpecContainerId": 21
+       },
+       {
+        "Creatures": [
+         {
+          "RoomZoneId": 1,
+          "X": 15,
+          "Y": 20,
+          "Id": 81,
+          "SpecContainerId": 1003
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 20,
+          "Y": 21,
+          "Orientation": 2,
+          "Id": 372,
+          "SpecContainerId": 1003
+         }
+        ],
+        "Traps": [
+         {
+          "PowerSupplyCastleBuildableId": 529,
+          "RoomZoneId": 1,
+          "X": 19,
+          "Y": 9,
+          "Id": 170,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 528,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 9,
+          "Id": 345,
+          "SpecContainerId": 1005
+         },
+         {
+          "PowerSupplyCastleBuildableId": 527,
+          "RoomZoneId": 1,
+          "X": 13,
+          "Y": 33,
+          "Id": 364,
+          "SpecContainerId": 1003
+         },
+         {
+          "PowerSupplyCastleBuildableId": 527,
+          "RoomZoneId": 1,
+          "X": 22,
+          "Y": 34,
+          "Orientation": 2,
+          "Id": 365,
+          "SpecContainerId": 1003
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 16,
+          "Y": 23,
+          "Id": 527,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 7,
+          "Y": 16,
+          "Id": 528,
+          "SpecContainerId": 67
+         },
+         {
+          "RoomZoneId": 1,
+          "X": 25,
+          "Y": 16,
+          "Id": 529,
+          "SpecContainerId": 67
+         }
+        ],
+        "X": 8,
+        "Y": 6,
+        "Orientation": 3,
+        "Id": 74,
+        "SpecContainerId": 7099
+       }
+      ],
+      "CreatureTiers": [
+       {
+        "SpecContainerId": 1
+       },
+       {
+        "SpecContainerId": 2
+       },
+       {
+        "SpecContainerId": 34
+       },
+       {
+        "SpecContainerId": 426
+       },
+       {
+        "SpecContainerId": 1077
+       },
+       {
+        "SpecContainerId": 440
+       },
+       {
+        "SpecContainerId": 435
+       },
+       {
+        "SpecContainerId": 438
+       },
+       {
+        "SpecContainerId": 36
+       },
+       {
+        "SpecContainerId": 41
+       },
+       {
+        "SpecContainerId": 462,
+        "Tier": 5
+       },
+       {
+        "SpecContainerId": 20
+       },
+       {
+        "SpecContainerId": 57
+       },
+       {
+        "SpecContainerId": 13
+       },
+       {
+        "SpecContainerId": 1088
+       },
+       {
+        "SpecContainerId": 1017
+       },
+       {
+        "SpecContainerId": 1004
+       },
+       {
+        "SpecContainerId": 1012,
+        "AutoLevelUp": false
+       },
+       {
+        "SpecContainerId": 1003,
+        "AutoLevelUp": false
+       }
+      ],
+      "TrapTiers": [
+       {
+        "SpecContainerId": 5
+       },
+       {
+        "SpecContainerId": 2
+       },
+       {
+        "SpecContainerId": 74
+       },
+       {
+        "SpecContainerId": 67
+       },
+       {
+        "SpecContainerId": 66
+       },
+       {
+        "SpecContainerId": 77
+       },
+       {
+        "SpecContainerId": 78
+       },
+       {
+        "SpecContainerId": 79
+       },
+       {
+        "SpecContainerId": 1015
+       },
+       {
+        "SpecContainerId": 1005
+       },
+       {
+        "SpecContainerId": 1000
+       },
+       {
+        "SpecContainerId": 1002,
+        "AutoLevelUp": false
+       },
+       {
+        "SpecContainerId": 1003,
+        "AutoLevelUp": false
+       }
+      ],
+      "ThemeId": 9
+     },
+     "CastleType": 1,
+     "Level": 1,
+     "CreatureArchetypes": [
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "Tier": 5,
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      }
+     ],
+     "TrapArchetypes": [
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      },
+      {
+       "AutoLevelUp": false
+      }
+     ],
+     "InventoryThemes": [
+      9
+     ],
+     "RoomNextIndex": 75,
+     "CreatureNextIndex": 717,
+     "TrapNextIndex": 531,
+     "DecorationNextIndex": 124,
+     "TriggerNextIndex": 1,
+     "BuildingNextIndex": 9
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/SeasonalCompetitionService.cpp:18",
+   "context": [],
+   "json": {
+    "Notifications": [
+     {
+      "$type": "HyperQuest.GameServer.Contracts.LeagueUpdatedNotification, HyperQuest.GameServer.Contracts",
+      "LeagueId": 1,
+      "SubLeagueId": 1,
+      "NotificationType": 65
+     },
+     {
+      "$type": "HyperQuest.GameServer.Contracts.NewsAddedNotification, HyperQuest.GameServer.Contracts",
+      "NewsItem": {
+       "Id": "580d4fa55c98320a9cb0e55d",
+       "PublishDate": "2016-10-24T00:00:00Z",
+       "Data": {
+        "$type": "HyperQuest.GameServer.Contracts.LeagueUpdatedNewsData, HyperQuest.GameServer.Contracts",
+        "CurrentLeagueId": 1,
+        "CurrentSubleagueId": 1,
+        "PreviousLeagueId": 1,
+        "PreviousSubleagueId": 1,
+        "Type": 18
+       },
+       "IsUnread": true,
+       "Priority": 1
+      },
+      "NotificationType": 22
+     }
+    ]
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/SeasonalCompetitionService.cpp:30",
+   "context": [
+    "IsUnread",
+    "Priority",
+    "NotificationType"
+   ],
+   "json": {
+    "Result": {
+     "CurrentUser": {
+      "AccountSummary": {
+       "Id": 3142975,
+       "DisplayName": "Marlise",
+       "CountryCode": "US",
+       "AvatarId": 10,
+       "LeagueId": 2,
+       "SubLeagueId": 1,
+       "CastleLevel": 6,
+       "IsCastleAttackable": true
+      },
+      "Score": 103,
+      "IsCastleAttackable": true,
+      "Seconds": 251924966608
+     },
+     "WorldLeader": {
+      "AccountSummary": {
+       "Id": 2954896,
+       "DisplayName": "YouNeverKillMe",
+       "CountryCode": "RO",
+       "AvatarId": 8,
+       "LeagueId": 5,
+       "SubLeagueId": 3,
+       "CastleLevel": 30,
+       "IsCastleAttackable": true,
+       "GuildHeader": {
+        "Id": 152521,
+        "DisplayName": "RIP_MQEL",
+        "Emblem": {
+         "Id": 20
+        }
+       }
+      },
+      "Score": 2407,
+      "IsCastleAttackable": true,
+      "Seconds": 251924941161
+     },
+     "Leaders": [
+      {
+       "AccountSummary": {
+        "Id": 3143259,
+        "DisplayName": "TacoAdvocate",
+        "CountryCode": "US",
+        "AvatarId": 10,
+        "LeagueId": 2,
+        "SubLeagueId": 1,
+        "CastleLevel": 10,
+        "IsCastleAttackable": true,
+        "GuildHeader": {
+         "Id": 152763,
+         "DisplayName": "TacoKnights",
+         "Emblem": {
+          "Id": 9
+         }
+        }
+       },
+       "Score": 226,
+       "IsCastleAttackable": true,
+       "Seconds": 251924935822
+      },
+      {
+       "AccountSummary": {
+        "Id": 2098747,
+        "DisplayName": "FormerlyNiSaying",
+        "CountryCode": "FR",
+        "AvatarId": 10,
+        "LeagueId": 2,
+        "SubLeagueId": 1,
+        "CastleLevel": 20,
+        "IsCastleAttackable": true
+       },
+       "Score": 158,
+       "IsCastleAttackable": true,
+       "Seconds": 251924942106
+      },
+      {
+       "AccountSummary": {
+        "Id": 3142632,
+        "DisplayName": "Caesium_Citadel",
+        "CountryCode": "CA",
+        "AvatarId": 10,
+        "LeagueId": 2,
+        "SubLeagueId": 1,
+        "CastleLevel": 11,
+        "IsCastleAttackable": true
+       },
+       "Score": 150,
+       "IsCastleAttackable": true,
+       "Seconds": 251924946098
+      }
+     ],
+     "Entries": [
+      {
+       "AccountSummary": {
+        "Id": 3142975,
+        "DisplayName": "Marlise",
+        "CountryCode": "US",
+        "AvatarId": 10,
+        "LeagueId": 2,
+        "SubLeagueId": 1,
+        "CastleLevel": 6,
+        "IsCastleAttackable": true
+       },
+       "Score": 103,
+       "IsCastleAttackable": true,
+       "Seconds": 251924966608
+      }
+     ],
+     "TotalCount": 515,
+     "FirstEntryRank": 201,
+     "RemainingTime": "20h35m10s",
+     "ActiveZones": [
+      "AF",
+      "AS",
+      "EU",
+      "NA",
+      "OC",
+      "SA"
+     ],
+     "ActiveCountries": [
+      "AD",
+      "AE",
+      "AM",
+      "AR",
+      "AT",
+      "AU",
+      "AW",
+      "BA",
+      "BE",
+      "BG",
+      "BR",
+      "BY",
+      "CA",
+      "CH",
+      "CL",
+      "CM",
+      "CN",
+      "CO",
+      "CR",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "DZ",
+      "EC",
+      "EE",
+      "EG",
+      "ES",
+      "FI",
+      "FR",
+      "GA",
+      "GB",
+      "GP",
+      "GR",
+      "GT",
+      "GU",
+      "HK",
+      "HR",
+      "HU",
+      "ID",
+      "IE",
+      "IL",
+      "IN",
+      "IQ",
+      "IR",
+      "IT",
+      "JO",
+      "JP",
+      "KG",
+      "KH",
+      "KR",
+      "KW",
+      "KZ",
+      "LA",
+      "LT",
+      "LU",
+      "LV",
+      "MA",
+      "MK",
+      "MN",
+      "MT",
+      "MX",
+      "MY",
+      "NC",
+      "NG",
+      "NL",
+      "NO",
+      "NZ",
+      "PA",
+      "PE",
+      "PH",
+      "PL",
+      "PR",
+      "PT",
+      "RE",
+      "RO",
+      "RS",
+      "RU",
+      "SA",
+      "SE",
+      "SG",
+      "SI",
+      "SK",
+      "TH",
+      "TN",
+      "TR",
+      "TT",
+      "TW",
+      "UA",
+      "US",
+      "UY",
+      "VE",
+      "VN",
+      "WS",
+      "ZA"
+     ],
+     "PreviousLeagueInfo": {
+      "PreviousLeagueRank": 30,
+      "PreviousWorldRank": 1381,
+      "PreviousLeagueId": 1,
+      "PreviousSubLeagueId": 1
+     },
+     "NextSeasonStartingDate": "2016-10-26T00:00:00Z"
+    }
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/ServerCommandService.cpp:103",
+   "context": [
+    "AssignmentId"
+   ],
+   "json": {
+    "$type": "HyperQuest.GameServer.Contracts.CastleBoughtNotification, HyperQuest.GameServer.Contracts",
+    "IsStartupCastle": true,
+    "BuildInfo": {
+     "Draft": {
+      "AccountId": 3142975,
+      "LayoutId": 1,
+      "CreationDate": "2016-10-23T07:20:03Z",
+      "ModificationDate": "2016-10-24T00:00:50Z",
+      "Rooms": [
+       {
+        "X": 4,
+        "Y": 3,
+        "Id": 1,
+        "SpecContainerId": 21
+       },
+       {
+        "Buildings": [
+         {
+          "Rank": 1,
+          "RoomZoneId": 12,
+          "X": 3,
+          "Y": 3,
+          "Orientation": 2,
+          "Id": 1,
+          "SpecContainerId": 1
+         },
+         {
+          "Rank": 1,
+          "RoomZoneId": 11,
+          "Id": 2,
+          "SpecContainerId": 3
+         },
+         {
+          "Rank": 1,
+          "RoomZoneId": 13,
+          "Id": 3,
+          "SpecContainerId": 4
+         },
+         {
+          "RoomZoneId": 7,
+          "X": 3,
+          "Orientation": 3,
+          "Id": 4,
+          "SpecContainerId": 13
+         },
+         {
+          "RoomZoneId": 4,
+          "X": 3,
+          "Orientation": 3,
+          "Id": 6,
+          "SpecContainerId": 10
+         },
+         {
+          "RoomZoneId": 6,
+          "X": 3,
+          "Y": 3,
+          "Orientation": 2,
+          "Id": 7,
+          "SpecContainerId": 8
+         },
+         {
+          "RoomZoneId": 3,
+          "Y": 3,
+          "Orientation": 1,
+          "Id": 8,
+          "SpecContainerId": 9
+         }
+        ],
+        "X": 3,
+        "Y": 3,
+        "Id": 3,
+        "SpecContainerId": 25
+       }
+      ],
+      "ThemeId": 21
+     },
+     "Level": 1,
+     "InventoryThemes": [
+      2,
+      21
+     ],
+     "RoomNextIndex": 4,
+     "CreatureNextIndex": 40,
+     "TrapNextIndex": 5,
+     "DecorationNextIndex": 32,
+     "TriggerNextIndex": 1,
+     "BuildingNextIndex": 9,
+     "CastleStats": {
+      "TotalConstructionPoints": 56,
+      "MaxConstructionPoints": 56,
+      "WinRatio": 0.5,
+      "WinRatioDifficulty": 2
+     },
+     "CastleHeartRank": 1
+    },
+    "NotificationType": 86
+   }
+  },
+  {
+   "source": "Source/Frontend/Services/ServerCommandService.cpp:104",
+   "context": [
+    "WinRatioDifficulty",
+    "CastleHeartRank",
+    "NotificationType"
+   ],
+   "json": {
+    "$type": "HyperQuest.GameServer.Contracts.SkusModifiersUpdatedNotification, HyperQuest.GameServer.Contracts",
+    "ShopSkuModifiers": [
+     {
+      "SkuCode": "15221",
+      "LimitedQuantityMax": 15,
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 3,
+      "LimitedQuantityNextUnlockQuantity": 10
+     },
+     {
+      "SkuCode": "13911",
+      "LimitedQuantityMax": 1,
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15266",
+      "LimitedQuantityMax": 2
+     },
+     {
+      "SkuCode": "15226",
+      "LimitedQuantityMax": 20,
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+      "LimitedQuantityNextUnlockQuantity": 5
+     },
+     {
+      "SkuCode": "15224",
+      "LimitedQuantityMax": 2,
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15502",
+      "LimitedQuantityMax": 4
+     },
+     {
+      "SkuCode": "15503",
+      "LimitedQuantityMax": 4
+     },
+     {
+      "SkuCode": "15504",
+      "LimitedQuantityMax": 3
+     },
+     {
+      "SkuCode": "15513",
+      "LimitedQuantityMax": 3
+     },
+     {
+      "SkuCode": "15262",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 2,
+      "LimitedQuantityNextUnlockQuantity": 4
+     },
+     {
+      "SkuCode": "15229",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 3,
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15220",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 4,
+      "LimitedQuantityNextUnlockQuantity": 20
+     },
+     {
+      "SkuCode": "15264",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 4,
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15230",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 5,
+      "LimitedQuantityNextUnlockQuantity": 5
+     },
+     {
+      "SkuCode": "15263",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 6,
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15268",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 6,
+      "LimitedQuantityNextUnlockQuantity": 5
+     },
+     {
+      "SkuCode": "15225",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 7,
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15467",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 8,
+      "LimitedQuantityNextUnlockQuantity": 3
+     },
+     {
+      "SkuCode": "15234",
+      "LimitedQuantityNextUnlockCastleLevelRequirement": 9,
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16070",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16071",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16072",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16073",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16074",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16075",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16076",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16077",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16078",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16079",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16080",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16049",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15805",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15810",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15811",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15806",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15835",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15807",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15812",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15808",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15804",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15809",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15813",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15825",
+      "LimitedQuantityNextUnlockQuantity": 3
+     },
+     {
+      "SkuCode": "15834",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15872",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15974",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15957",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15814",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15892",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16067",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15815",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15816",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16068",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15827",
+      "LimitedQuantityNextUnlockQuantity": 6
+     },
+     {
+      "SkuCode": "15828",
+      "LimitedQuantityNextUnlockQuantity": 3
+     },
+     {
+      "SkuCode": "15817",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15856",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16006",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16055",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16058",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15818",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15819",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15855",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15890",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16059",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16060",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15820",
+      "LimitedQuantityNextUnlockQuantity": 3
+     },
+     {
+      "SkuCode": "15821",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15874",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15981",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16064",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16057",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16061",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15822",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16010",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15961",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15853",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15984",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16062",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16063",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15823",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "15830",
+      "LimitedQuantityNextUnlockQuantity": 3
+     },
+     {
+      "SkuCode": "15977",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16046",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16065",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "16066",
+      "LimitedQuantityNextUnlockQuantity": 2
+     },
+     {
+      "SkuCode": "15854",
+      "LimitedQuantityNextUnlockQuantity": 1
+     },
+     {
+      "SkuCode": "16032",
+      "LimitedQuantityNextUnlockQuantity": 1
+     }
+    ],
+    "NotificationType": 90
+   }
+  }
+ ]
+}

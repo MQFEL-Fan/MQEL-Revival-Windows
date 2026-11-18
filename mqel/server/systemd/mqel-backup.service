@@ -1,0 +1,32 @@
+# Offsite-Backup von server/state nach Cloudflare R2, gestartet von mqel-backup.timer.
+# Installation:
+#   apt install rclone
+#   R2: Bucket anlegen, API-Token "Object Read & Write" nur für diesen Bucket,
+#       Lifecycle-Regel "Objekte nach 30 Tagen löschen"
+#   /etc/mqel-backup.env (chmod 600, root):
+#     R2_BUCKET=mqel-backup
+#     RCLONE_CONFIG_R2_TYPE=s3
+#     RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+#     RCLONE_CONFIG_R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+#     RCLONE_CONFIG_R2_ACCESS_KEY_ID=...
+#     RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=...
+#   cp server/systemd/mqel-backup.* /etc/systemd/system/
+#   systemctl enable --now mqel-backup.timer
+#   Test: systemctl start mqel-backup; journalctl -u mqel-backup
+# Wiederherstellen: rclone copy r2:mqel-backup/<Name> . (mit derselben env),
+#   Dienste stoppen, tar -xzf <Name> -C /opt/mqel/server/state, chown -R mqel:.
+[Unit]
+Description=Mighty Quest state backup to Cloudflare R2
+After=network.target
+
+[Service]
+Type=oneshot
+User=mqel
+Group=mqel
+EnvironmentFile=/etc/mqel-backup.env
+ExecStart=/opt/mqel/server/systemd/backup.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes

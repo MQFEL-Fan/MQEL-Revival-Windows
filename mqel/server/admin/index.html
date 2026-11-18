@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQEL Admin</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #6b7385;
+  --line: #e3e6ec; --accent: #3f6ad8; --accent-text: #ffffff;
+  --ok: #1f8a4c; --bad: #c0392b; --hover: #eef2fb; --code: #f1f3f7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171d; --panel: #1c2028; --text: #e4e7ee; --muted: #8d95a8;
+    --line: #2c323d; --accent: #6b8ff0; --accent-text: #0e1116;
+    --ok: #4cc27f; --bad: #ef6b5b; --hover: #242a35; --code: #161a21;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; align-items: center; gap: 24px; padding: 12px 20px;
+  background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 16px; margin: 0; }
+nav button { background: none; border: 0; color: var(--muted); font: inherit;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+nav button.on { color: var(--text); background: var(--hover); font-weight: 600; }
+main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; grid-auto-flow: dense; }
+.grid .panel { margin: 0; }
+.grid .span2 { grid-column: span 2; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+input, select, button.btn { font: inherit; color: var(--text); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button.btn { cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+button.btn.danger { color: var(--bad); border-color: var(--bad); }
+.tag.bad { color: #fff; background: var(--bad); }
+button.btn:disabled { opacity: .5; cursor: default; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover { background: var(--hover); }
+.muted { color: var(--muted); }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+pre { background: var(--code); padding: 10px; border-radius: 6px; margin: 0; overflow-x: auto; font-size: 12px; }
+.back { margin-bottom: 12px; }
+.form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 10px; }
+.form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.form input { width: 110px; }
+.bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; margin: 8px 0 4px; }
+.bars div { flex: 1; display: flex; flex-direction: column-reverse; min-width: 4px; }
+.bars span { display: block; }
+.bars .e { background: #d9a520; } .bars .s { background: #7a6bb3; }
+.econ { display: grid; gap: 12px; margin-bottom: 12px; }
+.econ label { display: grid; grid-template-columns: minmax(200px, 320px) 110px 1fr; gap: 10px; align-items: center; }
+.econ input { width: 110px; }
+@media (max-width: 640px) { .econ label { grid-template-columns: 1fr; } }
+.form input.wide, .form select.wide, .toolbar .wide { width: 260px; }
+#toast { position: fixed; right: 20px; bottom: 20px; padding: 10px 14px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  display: none; max-width: 420px; }
+#toast.ok { border-color: var(--ok); } #toast.bad { border-color: var(--bad); color: var(--bad); }
+details summary { cursor: pointer; color: var(--accent); }
+a { color: var(--accent); }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 10px; background: var(--hover); font-size: 12px; }
+@media (max-width: 640px) {
+  main { padding: 16px; } header { padding: 10px 16px; gap: 12px; }
+  .grid { grid-template-columns: 1fr; }
+  .grid .span2 { grid-column: auto; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>MQEL Admin</h1>
+  <nav>
+    <button data-view="players" class="on">Players</button>
+    <button data-view="clans">Clans</button>
+    <button data-view="purchases">Purchases</button>
+    <button data-view="tracking">Tracking</button>
+    <button data-view="chat">Chat</button>
+    <button data-view="economy">Economy</button>
+    <button data-view="ecostats">Economy stats</button>
+    <button data-view="news">News</button>
+    <button data-view="server">Server</button>
+  </nav>
+  <span id="maint" style="margin-left:auto"></span>
+  <span id="who" class="muted"></span>
+</header>
+<main id="main"></main>
+<div id="toast"></div>
+<datalist id="dl-equipment"></datalist>
+<datalist id="dl-material"></datalist>
+
+<script>
+"use strict";
+// League names from the LeagueSettings icons
+const LEAGUES = {1: "Unranked", 2: "Cluckers", 3: "Boogers", 4: "Pounders", 5: "Ballers", 6: "Thrashers"};
+let catalog = null;
+
+async function api(method, args) {
+  const r = await fetch(method === "session" ? "/admin/session" : "/admin/api/" + method, {method: "POST",
+    headers: {"Content-Type": "application/json"}, body: JSON.stringify(args || {})});
+  const data = (r.headers.get("Content-Type") || "").includes("json") ? await r.json() : null;
+  if (r.status === 401 && method !== "session") { showLogin(); throw new Error("Login required"); }
+  if (!r.ok) throw new Error((data && data.Error) || ("HTTP " + r.status));
+  return data;
+}
+
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v !== undefined && v !== null && v !== false) el.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c !== null && c !== undefined)
+    el.append(c instanceof Node ? c : String(c));
+  return el;
+}
+const fmt = n => (n ?? 0).toLocaleString("en-US");
+const when = s => s ? new Date(s).toLocaleString("en-US") : "–";
+const league = l => l ? `${LEAGUES[l[0]] || "League " + l[0]} ${l[0] > 1 ? l[1] : ""}`.trim() : "–";
+
+function toast(text, ok = true) {
+  const t = document.getElementById("toast");
+  t.textContent = text; t.className = ok ? "ok" : "bad"; t.style.display = "block";
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.style.display = "none", 4000);
+}
+
+function table(cols, rows, onclick) {
+  return h("div", {class: "table-wrap"}, h("table", {},
+    h("thead", {}, h("tr", {}, cols.map(c => h("th", {class: c.num ? "num" : null}, c.label)))),
+    h("tbody", {}, rows.length ? rows.map(r => h("tr", {class: onclick ? "click" : null,
+        onclick: onclick ? () => onclick(r) : null},
+      cols.map(c => h("td", {class: c.num ? "num" : null}, c.get(r)))))
+      : h("tr", {}, h("td", {colspan: cols.length, class: "muted"}, "No entries")))));
+}
+
+// ---- Players ---------------------------------------------------------------
+
+async function showPlayers() {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#players");
+  main.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+  const accounts = await api("ListAccounts");
+  const search = h("input", {type: "search", placeholder: "Search name or token", class: "wide"});
+  const body = h("div");
+  const cols = [
+    {label: "Name", get: a => a.DisplayName || h("span", {class: "muted"}, "(no name)")},
+    {label: "Login", get: a => a.Login},
+    {label: "Id", num: true, get: a => a.Id},
+    {label: "Castle", num: true, get: a => a.CastleLevel},
+    {label: "Trophies", num: true, get: a => fmt(a.TrophyScore)},
+    {label: "League", get: a => league(a.League)},
+    {label: "Heroes", get: a => a.Heroes.map(x => `${x.Name} ${x.Level}`).join(", ")},
+    {label: "Gold", num: true, get: a => fmt(a.Wallet.InGameCoin)},
+    {label: "Life Force", num: true, get: a => fmt(a.Wallet.LifeForce)},
+    {label: "Blings", num: true, get: a => fmt(a.Wallet.PremiumCash)},
+    {label: "Clan", get: a => a.Guild},
+    {label: "Last online", get: a => when(a.LastSeenOnline)},
+    {label: "Status", get: a => sanctionText(a.Sanction)},
+    {label: "Cheat", get: a => cheatText(a.Cheat)},
+  ];
+  const render = () => {
+    const q = search.value.trim().toLowerCase();
+    body.replaceChildren(table(cols, accounts.filter(a => !q
+      || a.DisplayName.toLowerCase().includes(q) || a.Login.toLowerCase().includes(q)),
+      a => showPlayer(a.Id)));
+  };
+  search.addEventListener("input", render);
+  render();
+  main.replaceChildren(h("div", {class: "panel"},
+    h("h2", {}, `Players (${accounts.length})`), h("div", {class: "toolbar"}, search), body));
+  search.focus();
+}
+
+// Verdacht aus dem Tracking: CheatFailure (1401) und gesetzte ClientHackFlags (1402)
+function cheatText(c) {
+  const parts = (c.Failures ? [`${c.Failures}× EndAttack`] : []).concat(c.Flags);
+  return parts.length ? h("span", {class: "tag bad", title: "See tracking: CheatFailure / ClientHack"},
+    parts.join(", ")) : "";
+}
+
+function sanctionText(s) {
+  if (!s) return "";
+  return h("span", {class: "tag bad"}, s.Status === 2 ? "Banned" : "Suspended until " + when(s.Until));
+}
+
+async function showPlayer(id) {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#player/" + id);
+  const a = await api("GetAccountDetail", {accountId: id});
+  catalog = catalog || await api("GetCatalog");
+  fillDatalists();
+  const events = await api("GetTracking", {accountId: id, max: 50});
+  const purchases = (await api("GetPurchases", {accountId: id, max: 200})).Purchases;
+  const reload = () => showPlayer(id);
+  const w = a.Wallet;
+
+  const overview = h("div", {class: "panel"}, h("h2", {}, "Overview"), h("dl", {class: "kv"}, [
+    ["Name", a.DisplayName || "–"], ["Login", a.Login], ["Account ID", a.Id],
+    ["Country", a.CountryCode || "–"], ["Castle level", a.CastleLevel],
+    ["Trophies", fmt(a.TrophyScore)], ["League", league(a.League)], ["Clan", a.GuildId ? h("a", {href: "#clan/" + a.GuildId,
+      onclick: ev => { ev.preventDefault(); go("clans", () => showClan(a.GuildId)); }}, a.Guild) : "–"],
+    ["Shield until", when(a.Shield)], ["Last online", when(a.LastSeenOnline)],
+    ["Status", sanctionText(a.Sanction) || "Active"],
+    ["Quests / Achievements", `${a.Objectives} / ${a.Achievements}`],
+  ].flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])));
+
+  // Wallet: amounts are deltas (+/-)
+  const wIn = {InGameCoin: h("input", {type: "number", placeholder: "±0"}),
+               LifeForce: h("input", {type: "number", placeholder: "±0"}),
+               PremiumCash: h("input", {type: "number", placeholder: "±0"})};
+  const wReason = h("input", {class: "wide", placeholder: "Reason (optional)"});
+  const wallet = h("div", {class: "panel"}, h("h2", {}, "Wallet"),
+    h("dl", {class: "kv"},
+      h("dt", {}, "Gold"), h("dd", {}, `${fmt(w.InGameCoin)} / ${fmt(w.InGameCoinStorageCapacity)}`),
+      h("dt", {}, "Life Force"), h("dd", {}, `${fmt(w.LifeForce)} / ${fmt(w.LifeForceStorageCapacity)}`),
+      h("dt", {}, "Blings"), h("dd", {}, fmt(w.PremiumCash))),
+    h("p", {class: "muted"}, "Enter a change (negative to subtract). Storage capacity is not enforced here."),
+    h("div", {class: "form"},
+      h("label", {}, "Gold", wIn.InGameCoin), h("label", {}, "Life Force", wIn.LifeForce),
+      h("label", {}, "Blings", wIn.PremiumCash), h("label", {}, "Reason", wReason),
+      h("button", {class: "btn primary", onclick: async () => {
+        const args = {accountId: id, reason: wReason.value};
+        for (const [k, el] of Object.entries(wIn)) if (el.value) args[k] = parseInt(el.value, 10);
+        try { const d = await api("UpdateWallet", args);
+          toast(Object.keys(d).length ? "Wallet updated" : "No change"); reload(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Apply")));
+
+  const heroes = h("div", {class: "panel"}, h("h2", {}, "Heroes"), table([
+    {label: "Hero", get: x => x.Name + (x.Selected ? " ★" : "")},
+    {label: "Level", num: true, get: x => x.Level},
+    {label: "XP", num: true, get: x => fmt(x.XP)},
+    {label: "Items", num: true, get: x => x.Equipment.length}], a.Heroes,
+    x => showGear(x)),
+    a.Heroes.length ? (() => {
+      const hSel = h("select", {}, a.Heroes.map(x => h("option", {value: x.Id}, x.Name)));
+      const hLvl = h("input", {type: "number", min: 1, max: 30, placeholder: "Level"});
+      return h("div", {class: "form"}, h("label", {}, "Hero", hSel), h("label", {}, "Raise to level", hLvl),
+        h("button", {class: "btn primary", onclick: async () => {
+          if (!hLvl.value) return toast("Enter a level", false);
+          try { const d = await api("SetHeroLevel", {accountId: id, heroId: +hSel.value,
+              level: +hLvl.value});
+            toast(`Level ${d.Level}`); reload(); }
+          catch (e) { toast(e.message, false); }
+        }}, "Apply"));
+    })() : null);
+
+  // Equipped items of one hero (default: the selected hero)
+  const gearBody = h("div");
+  const gearTitle = h("h2");
+  const showGear = hero => {
+    gearTitle.textContent = `Equipped – ${hero.Name}`;
+    gearBody.replaceChildren(
+      table([{label: "Slot", get: x => x.Slot}, {label: "Name", get: x => x.Name},
+        {label: "Template", num: true, get: x => x.TemplateId},
+        {label: "Level", num: true, get: x => x.Level ?? ""}], hero.Equipment),
+      hero.Belt.length ? h("p", {class: "muted"}, "Belt: ",
+        hero.Belt.map(b => h("span", {class: "tag"}, `${b.Name} ×${b.Count}`), " ")) : null);
+  };
+  const gear = h("div", {class: "panel span2"}, gearTitle,
+    h("p", {class: "muted"}, "Click a hero to show their gear."), gearBody);
+  if (a.Heroes.length) showGear(a.Heroes.find(x => x.Selected) || a.Heroes[0]);
+
+  // Give item
+  const kind = h("select", {}, h("option", {value: "equipment"}, "Equipment"),
+    h("option", {value: "material"}, "Consumable / material"));
+  const tpl = h("input", {class: "wide", list: "dl-equipment", placeholder: "Search template"});
+  const amount = h("input", {type: "number", min: 1, value: 30});
+  const amountLabel = h("label", {}, "Level", amount);
+  kind.addEventListener("change", () => {
+    const eq = kind.value === "equipment";
+    tpl.setAttribute("list", eq ? "dl-equipment" : "dl-material"); tpl.value = "";
+    amountLabel.firstChild.textContent = eq ? "Level" : "Amount"; amount.value = eq ? 30 : 1;
+  });
+  const gReason = h("input", {class: "wide", placeholder: "Reason (optional)"});
+  const give = h("div", {class: "form"}, h("label", {}, "Type", kind),
+    h("label", {}, "Template", tpl), amountLabel, h("label", {}, "Reason", gReason),
+    h("button", {class: "btn primary", onclick: async () => {
+      const m = /^(\d+)/.exec(tpl.value.trim());
+      if (!m) return toast("Pick a template (ID first)", false);
+      try { await api("GiveItem", {accountId: id, kind: kind.value, templateId: +m[1],
+          amount: +amount.value || 1, reason: gReason.value});
+        toast("Item given"); reload(); }
+      catch (e) { toast(e.message, false); }
+    }}, "Give"));
+
+  const invKind = h("select", {}, ["All", "Equipment", "Consumable"].map(k => h("option", {value: k}, k)));
+  const invSearch = h("input", {type: "search", class: "wide", placeholder: "Filter by name"});
+  const invBody = h("div");
+  const renderInv = () => {
+    const q = invSearch.value.trim().toLowerCase();
+    invBody.replaceChildren(table([{label: "Slot", num: true, get: x => x.Slot},
+      {label: "Type", get: x => x.Kind}, {label: "Name", get: x => x.Name},
+      {label: "Template", num: true, get: x => x.TemplateId},
+      {label: "Level", num: true, get: x => x.Level ?? ""},
+      {label: "Count", num: true, get: x => x.Count}],
+      a.Inventory.filter(x => (invKind.value === "All" || x.Kind === invKind.value)
+        && (!q || x.Name.toLowerCase().includes(q)))));
+  };
+  invKind.addEventListener("change", renderInv);
+  invSearch.addEventListener("input", renderInv);
+  renderInv();
+  const nEq = a.Inventory.filter(x => x.Kind === "Equipment").length;
+  const inventory = h("div", {class: "panel"},
+    h("h2", {}, `Inventory (${a.Inventory.length} / ${a.InventorySlots} slots)`), give,
+    h("details", {}, h("summary", {}, `Show items – ${nEq} equipment, ${a.Inventory.length - nEq} consumables`),
+      h("div", {class: "toolbar", style: "margin-top:12px"}, invKind, invSearch), invBody));
+
+  // Shield and packs
+  const hours = h("input", {type: "number", min: 0, step: "0.5", value: 24});
+  const pack = h("select", {class: "wide"}, catalog.SpecialPacks
+    .filter(p => !a.SpecialPacks.some(x => x.Id === p.Id))
+    .map(p => h("option", {value: p.Id}, `${p.Id} – ${p.Name}`)));
+  const shieldCall = async hrs => {
+    try { await api("SetShield", {accountId: id, hours: hrs});
+      toast(hrs ? "Shield set" : "Shield removed"); reload(); }
+    catch (e) { toast(e.message, false); }
+  };
+  const extras = h("div", {class: "panel"}, h("h2", {}, "Shield & packs"),
+    h("div", {class: "form"}, h("label", {}, "Shield (hours)", hours),
+      h("button", {class: "btn primary", onclick: () => shieldCall(+hours.value)}, "Set"),
+      h("button", {class: "btn", disabled: !a.Shield, onclick: () => shieldCall(0)}, "Remove")),
+    h("div", {class: "form"}, h("label", {}, "Unlock pack", pack),
+      h("button", {class: "btn primary", onclick: async () => {
+        try { const d = await api("GrantSpecialPack", {accountId: id, packId: +pack.value});
+          toast(d.Granted ? "Pack unlocked (takes effect after a client restart)" : "Already owned"); reload(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Unlock")),
+    h("p", {class: "muted"}, "Owned: ",
+      a.SpecialPacks.length ? a.SpecialPacks.map(p => h("span", {class: "tag"}, p.Name || p.Id), " ") : "none"));
+
+  // Ban / suspension: the client is rejected from its next request on
+  const sHours = h("input", {type: "number", min: 0.5, step: "0.5", value: 24});
+  const sReason = h("input", {class: "wide", placeholder: "Reason (optional)"});
+  const sanctionCall = async (status, msg) => {
+    if (status === "ban" && !confirm(`Ban ${a.DisplayName || a.Login}?`)) return;
+    try { await api("SetSanction", {accountId: id, status, hours: +sHours.value, reason: sReason.value});
+      toast(msg); reload(); }
+    catch (e) { toast(e.message, false); }
+  };
+  const s = a.Sanction;
+  const pw = h("input", {type: "password", autocomplete: "new-password", placeholder: "New password"});
+  const access = [
+    h("p", {class: a.HasPassword ? "" : "muted"}, a.HasPassword ? "Password set."
+      : a.SteamId ? "No password – Steam login only."
+      : "No password yet – the first launcher login sets it."),
+    a.SteamId ? h("div", {class: "form"}, h("span", {}, "Steam: ",
+        h("a", {href: `https://steamcommunity.com/profiles/${a.SteamId}`, target: "_blank", rel: "noopener"}, a.SteamId)),
+      h("button", {class: "btn", onclick: async () => {
+        if (!confirm(`Unlink Steam account ${a.SteamId} from ${a.Login}?` + (a.HasPassword ? ""
+          : " The account has no password: the player cannot log in until you set one."))) return;
+        try { await api("UnlinkSteam", {accountId: id}); toast("Steam account unlinked, player logged out"); reload(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Unlink Steam")) : h("p", {class: "muted"}, "No Steam account linked."),
+    h("div", {class: "form"}, h("label", {}, "Password", pw),
+      h("button", {class: "btn primary", onclick: async () => {
+        try { await api("SetPassword", {accountId: id, password: pw.value});
+          toast("Password changed, player logged out"); reload(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Set"),
+      h("button", {class: "btn", onclick: async () => {
+        try { const d = await api("Logout", {accountId: id});
+          toast(d.Sessions ? "Player logged out" : "No active session"); }
+        catch (e) { toast(e.message, false); }
+      }}, "Log out")),
+    h("div", {class: "form"}, h("span", {}, a.IsAdmin ? "Admin: may use this web tool." : "Not an admin."),
+      h("button", {class: "btn", disabled: !a.HasPassword, onclick: async () => {
+        if (!a.IsAdmin && !confirm(`Give ${a.Login} access to this web tool?`)) return;
+        try { await api("SetAdmin", {accountId: id, admin: !a.IsAdmin});
+          toast(a.IsAdmin ? "Admin access removed" : "Admin access granted"); reload(); session(); }
+        catch (e) { toast(e.message, false); }
+      }}, a.IsAdmin ? "Remove admin" : "Make admin")),
+    h("h2", {style: "margin-top:16px"}, "Sanction")];
+  const sanction = h("div", {class: "panel"}, h("h2", {}, "Login"), ...access,
+    s ? h("p", {}, sanctionText(s), " since ", when(s.Since), s.Reason ? ` – ${s.Reason}` : "")
+      : h("p", {class: "muted"}, "No active sanction."),
+    h("div", {class: "form"}, h("label", {}, "Suspend (hours)", sHours),
+      h("label", {}, "Reason", sReason),
+      h("button", {class: "btn primary", onclick: () => sanctionCall("suspend", "Player suspended")}, "Suspend"),
+      h("button", {class: "btn danger", onclick: () => sanctionCall("ban", "Player banned")}, "Ban"),
+      h("button", {class: "btn", disabled: !s, onclick: () => sanctionCall("none", "Sanction lifted")}, "Lift")),
+    h("p", {class: "muted"}, "The launcher login refuses the player. A running game fails on its next request with ‘Network Error’."),
+    h("h2", {style: "margin-top:16px"}, "Cheat flags"),
+    h("div", {class: "form"}, h("span", {}, cheatText(a.Cheat) || "None."),
+      h("button", {class: "btn", disabled: !(a.Cheat.Failures || a.Cheat.Flags.length), onclick: async () => {
+        if (!confirm(`Clear cheat flags of ${a.DisplayName || a.Login}? This deletes their CheatFailure and ClientHack tracking entries.`)) return;
+        try { const d = await api("ClearCheatFlags", {accountId: id});
+          toast(`Cheat flags cleared (${d.Removed} entries)`); reload(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Clear cheat flags")),
+    h("h2", {style: "margin-top:16px"}, "Delete account"),
+    h("div", {class: "form"},
+      h("button", {class: "btn danger", disabled: a.Heroes.length > 0, onclick: async () => {
+        if (!confirm(`Delete account ${id} (${a.Login}) for good? Save game, login and tracking are removed; the login name becomes free again.`)) return;
+        try { await api("DeleteAccount", {accountId: id}); toast("Account deleted"); showPlayers(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Delete account")),
+    h("p", {class: "muted"}, "Only for accounts without heroes (tutorial never finished)."));
+
+  const friends = h("div", {class: "panel"}, h("h2", {}, `Friends (${a.Friends.length})`),
+    table([{label: "Name", get: f => f.DisplayName}, {label: "Id", num: true, get: f => f.Id}], a.Friends));
+
+  main.replaceChildren(
+    h("button", {class: "btn back", onclick: showPlayers}, "← All players"),
+    h("div", {class: "grid"}, overview, wallet, heroes, gear, extras, sanction),
+    h("div", {style: "height:16px"}),
+    inventory,
+    h("div", {class: "panel"}, h("h2", {}, `Purchases (${purchases.length})`),
+      purchaseTable(purchases, false)),
+    h("div", {class: "grid"}, friends,
+      h("div", {class: "panel"}, h("h2", {}, "Recent events"), eventTable(events, false))));
+}
+
+function fillDatalists() {
+  const fill = (id, list) => document.getElementById(id).replaceChildren(
+    ...list.map(x => h("option", {value: `${x.Id} – ${x.Name}`})));
+  if (!document.getElementById("dl-equipment").children.length) {
+    fill("dl-equipment", catalog.Equipment);
+    fill("dl-material", catalog.Consumables);
+  }
+}
+
+// ---- Clans ----------------------------------------------------------------
+
+const RECRUITMENT = {1: "Join request", 2: "Open", 3: "Closed"};
+
+async function showClans() {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#clans");
+  main.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+  const clans = await api("ListGuilds");
+  main.replaceChildren(h("div", {class: "panel"}, h("h2", {}, `Clans (${clans.length})`),
+    table([{label: "Rank", num: true, get: c => c.Rank}, {label: "Name", get: c => c.DisplayName},
+      {label: "Leader", get: c => c.Leader}, {label: "Members", num: true, get: c => c.Members},
+      {label: "Trophies", num: true, get: c => fmt(c.TrophyScore)},
+      {label: "Language", get: c => c.LanguageCode},
+      {label: "Recruitment", get: c => RECRUITMENT[c.RecruitmentMode] || c.RecruitmentMode},
+      {label: "Battles", num: true, get: c => c.Battles}], clans, c => showClan(c.Id))));
+}
+
+async function showClan(id) {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#clan/" + id);
+  const c = await api("GetGuildDetail", {guildId: id});
+  const overview = h("div", {class: "panel"}, h("h2", {}, c.DisplayName), h("dl", {class: "kv"}, [
+    ["Clan ID", c.Id], ["Rank", c.Rank], ["Trophies", fmt(c.TrophyScore)],
+    ["Language", c.LanguageCode], ["Recruitment", RECRUITMENT[c.RecruitmentMode] || c.RecruitmentMode],
+  ].flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])));
+  const texts = h("div", {class: "panel"}, h("h2", {}, "Texts"),
+    h("p", {class: "muted"}, "Description"), h("p", {}, c.Description || "–"),
+    h("p", {class: "muted"}, "Welcome message"), h("p", {}, c.WelcomeMessage || "–"));
+  const members = h("div", {class: "panel"}, h("h2", {}, `Members (${c.Members.length})`),
+    h("p", {class: "muted"}, "Click a real player to open their account; others are filler players."),
+    table([{label: "Name", get: m => m.DisplayName + (m.IsPlayer ? "" : " (filler)")},
+      {label: "Title", get: m => m.Title}, {label: "Trophies", num: true, get: m => fmt(m.TrophyScore)},
+      {label: "Joined", get: m => when(m.JoinDate)}], c.Members,
+      m => m.IsPlayer && go("players", () => showPlayer(m.Id))));
+  const battles = h("div", {class: "panel"}, h("h2", {}, `Battle log (${c.Battles.length})`),
+    table([{label: "Time", get: b => when(b.Date)}, {label: "Attacker", get: b => b.Attacker},
+      {label: "Defender", get: b => b.Defender}, {label: "Result", get: b => b.Won ? "Attacker won" : "Defended"},
+      {label: "Duration", num: true, get: b => Math.round(b.DurationMs / 1000) + " s"},
+      {label: "Trophies (A / D)", num: true, get: b => `${b.AttackerTrophies} / ${b.DefenderTrophies}`}],
+      c.Battles));
+  main.replaceChildren(h("button", {class: "btn back", onclick: showClans}, "← All clans"),
+    h("div", {class: "grid"}, overview, texts), h("div", {style: "height:16px"}), members, battles);
+}
+
+// ---- Purchases ------------------------------------------------------------
+
+function purchaseTable(rows, withPlayer) {
+  const cols = [{label: "Time", get: r => when(r.Date)}];
+  if (withPlayer) cols.push({label: "Player", get: r => r.Player});
+  cols.push({label: "Type", get: r => r.Type}, {label: "Item", get: r => r.Item});
+  return table(cols, rows, withPlayer ? r => go("players", () => showPlayer(r.AccountId)) : null);
+}
+
+async function showPurchases() {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#purchases");
+  main.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+  const d = await api("GetPurchases");
+  main.replaceChildren(
+    h("div", {class: "panel"}, h("h2", {}, "Totals per player"),
+      h("p", {class: "muted"}, "Test-shop bookings, bling-shop packs and in-game shop purchases paid with Blings; nobody paid real money."),
+      table([{label: "Player", get: t => t.Player},
+        {label: "Blings bought", num: true, get: t => fmt(t.BlingsBought)},
+        {label: "Blings spent", num: true, get: t => fmt(t.BlingsSpent)},
+        {label: "Packs", num: true, get: t => t.Packs}], d.Totals,
+        t => go("players", () => showPlayer(t.AccountId)))),
+    h("div", {class: "panel"}, h("h2", {}, `Purchases (${d.Purchases.length})`),
+      purchaseTable(d.Purchases, true)));
+}
+
+// ---- Tracking --------------------------------------------------------------
+
+function eventTable(events, withAccount, names) {
+  const accounts = names || {};
+  const cols = [
+    {label: "Time", get: e => when(e.CreationDate)},
+    {label: "Event", get: e => (catalog && catalog.TrackingTags[e.TrackingTagId]) || e.TrackingTagId},
+  ];
+  if (withAccount) cols.push({label: "Player", get: e => accounts[e.AccountId] || e.AccountId || "–"});
+  cols.push({label: "Details", get: e => summary(e)});
+  const wrap = h("div", {class: "table-wrap"});
+  const tbody = h("tbody");
+  for (const e of events) {
+    const detail = h("tr", {style: "display:none"}, h("td", {colspan: cols.length},
+      h("pre", {}, JSON.stringify(e, null, 2))));
+    tbody.append(h("tr", {class: "click", onclick: () =>
+        detail.style.display = detail.style.display ? "" : "none"},
+      cols.map(c => h("td", {}, c.get(e)))), detail);
+  }
+  if (!events.length) tbody.append(h("tr", {}, h("td", {colspan: cols.length, class: "muted"}, "No events")));
+  wrap.append(h("table", {}, h("thead", {}, h("tr", {}, cols.map(c => h("th", {}, c.label)))), tbody));
+  return wrap;
+}
+
+function summary(e) {
+  const skip = new Set(["TagId", "TrackingTagId", "AccountId", "CreationDate"]);
+  const parts = [];
+  for (const [k, v] of Object.entries(e)) {
+    if (skip.has(k) || v === null || v === "" || typeof v === "object" && !Array.isArray(v) && k !== "WalletDelta") continue;
+    if (k === "WalletDelta") {
+      const s = Object.entries(v).filter(([, d]) => d).map(([f, d]) => `${f} ${d > 0 ? "+" : ""}${d}`);
+      if (s.length) parts.push(s.join(", "));
+    } else if (!Array.isArray(v)) parts.push(`${k}: ${v}`);
+    if (parts.length >= 4) break;
+  }
+  const text = parts.join(" · ");
+  return text.length > 110 ? text.slice(0, 110) + " …" : text;
+}
+
+async function showTracking() {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#tracking");
+  main.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+  catalog = catalog || await api("GetCatalog");
+  const accounts = await api("ListAccounts");
+  const names = Object.fromEntries(accounts.map(a => [a.Id, a.DisplayName || a.Login]));
+  const player = h("select", {}, h("option", {value: ""}, "All players"),
+    accounts.map(a => h("option", {value: a.Id}, names[a.Id])));
+  // Group by the hundreds block of the TrackingTagId
+  const groups = {};
+  for (const [id, name] of Object.entries(catalog.TrackingTags)) {
+    const g = Math.floor(id / 100);
+    (groups[g] = groups[g] || []).push([+id, name]);
+  }
+  const groupName = list => list.length === 1 ? list[0][1]
+    : list[0][1].replace(/[A-Z][a-z]+$/, "").replace(/^Economic.*/, "Economic") + "…";
+  const tagSel = h("select", {class: "wide"}, h("option", {value: ""}, "All events"),
+    Object.values(groups).map(list => h("optgroup", {label: groupName(list)},
+      list.map(([id, name]) => h("option", {value: id}, name)))));
+  const max = h("select", {}, [100, 500, 2000].map(n => h("option", {value: n}, `${n} entries`)));
+  const body = h("div");
+  const load = async () => {
+    body.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+    const args = {max: +max.value};
+    if (player.value) args.accountId = +player.value;
+    if (tagSel.value) args.tags = [+tagSel.value];
+    try { body.replaceChildren(eventTable(await api("GetTracking", args), true, names)); }
+    catch (e) { body.replaceChildren(h("p", {class: "muted"}, e.message)); }
+  };
+  [player, tagSel, max].forEach(el => el.addEventListener("change", load));
+  main.replaceChildren(h("div", {class: "panel"}, h("h2", {}, "Tracking"),
+    h("div", {class: "toolbar"}, player, tagSel, max,
+      h("button", {class: "btn", onclick: load}, "Refresh")), body));
+  load();
+}
+
+// ---- Chat (chat_log.py) ------------------------------------------------------
+
+// Mute: hours empty = permanent; the player still sees their own messages
+async function chatMute(accountId, name) {
+  const hours = prompt(`Mute ${name} in chat for how many hours? Leave empty for permanent.`, "24");
+  if (hours === null) return false;
+  const reason = prompt("Reason (kept in the tracking log):", "") ?? "";
+  await api("SetChatMute", {accountId, hours: +hours || 0, reason});
+  toast(`${name} muted`);
+  return true;
+}
+
+async function showChat() {
+  const main = document.getElementById("main");
+  history.replaceState(null, "", "#chat");
+  main.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+  const accounts = await api("ListAccounts");
+  const names = Object.fromEntries(accounts.map(a => [a.Id, a.DisplayName || a.Login]));
+  const player = h("select", {}, h("option", {value: ""}, "All players"),
+    accounts.map(a => h("option", {value: a.Id}, names[a.Id])));
+  const text = h("input", {type: "search", placeholder: "Search text", class: "wide"});
+  const mutedBox = h("div"), body = h("div");
+  const who = e => e.AccountId ? h("a", {href: "#player/" + e.AccountId,
+      onclick: ev => { ev.preventDefault(); go("players", () => showPlayer(e.AccountId)); }},
+    names[e.AccountId] || e.Login) : e.Login;
+  const load = async () => {
+    body.replaceChildren(h("p", {class: "muted"}, "Loading …"));
+    const args = {max: 500};
+    if (player.value) args.accountId = +player.value;
+    if (text.value.trim()) args.text = text.value.trim();
+    let d;
+    try { d = await api("GetChatLog", args); }
+    catch (e) { body.replaceChildren(h("p", {class: "muted"}, e.message)); return; }
+    mutedBox.replaceChildren(d.Muted.length ? h("p", {}, "Muted: ", d.Muted.map(m => h("span", {class: "tag bad"},
+      `${m.AccountId ? names[m.AccountId] || m.Login : m.Login} ${m.Until ? "until " + when(m.Until) : "(permanent)"} `,
+      m.AccountId ? h("button", {class: "btn", onclick: async () => {
+        await api("SetChatMute", {accountId: m.AccountId, mute: false}).catch(e => toast(e.message, false));
+        toast("Unmuted"); load(); }}, "Unmute") : null, " "))) : "");
+    body.replaceChildren(table([
+      {label: "Time", get: e => when(e.Time)},
+      {label: "Room", get: e => e.Room.split("@")[0]},
+      {label: "Player", get: who},
+      {label: "Message", get: e => [e.Text, e.Muted ? [" ", h("span", {class: "tag bad", title: "Only the sender saw it"}, "muted")] : null]},
+      {label: "", get: e => e.AccountId ? h("button", {class: "btn", onclick: () =>
+        chatMute(e.AccountId, names[e.AccountId] || e.Login).then(ok => ok && load()).catch(err => toast(err.message, false))}, "Mute…") : ""},
+    ], d.Entries), h("p", {class: "muted"},
+      `Messages are deleted after ${d.RetentionDays} days. Ban or suspend a player on their page.`));
+  };
+  player.addEventListener("change", load);
+  text.addEventListener("keydown", e => e.key === "Enter" && load());
+  main.replaceChildren(h("div", {class: "panel"}, h("h2", {}, "Chat"),
+    h("div", {class: "toolbar"}, player, text, h("button", {class: "btn", onclick: load}, "Search")),
+    mutedBox, body));
+  load();
+}
+
+// ---- News (news.py): shown in the launcher below the login box ---------------
+
+async function showNews(edit) {
+  history.replaceState(null, "", "#news");
+  const d = await api("GetNews");
+  const date = h("input", {type: "date", value: edit ? edit.Date : new Date().toISOString().slice(0, 10)});
+  const title = h("input", {class: "wide", placeholder: "Title", value: edit ? edit.Title : ""});
+  const text = h("textarea", {rows: 4, style: "width:100%", placeholder: "Text"});
+  text.value = edit ? edit.Text : "";
+  const save = async e => {
+    e.preventDefault();
+    const args = {date: date.value, title: title.value, text: text.value};
+    if (edit) args.id = edit.Id;
+    try { await api("SaveNews", args); toast("Saved"); showNews(); }
+    catch (err) { toast(err.message, false); }
+  };
+  const remove = async n => {
+    if (!confirm(`Delete "${n.Title}"?`)) return;
+    try { await api("DeleteNews", {id: n.Id}); toast("Deleted"); showNews(); }
+    catch (err) { toast(err.message, false); }
+  };
+  document.getElementById("main").replaceChildren(
+    h("div", {class: "panel"}, h("h2", {}, edit ? "Edit news" : "New news"),
+      h("form", {onsubmit: save, style: "display:flex;flex-direction:column;gap:8px;max-width:560px"},
+        date, title, text,
+        h("div", {}, h("button", {class: "btn primary", type: "submit"}, "Save"), " ",
+          edit ? h("button", {class: "btn", type: "button", onclick: () => showNews()}, "Cancel") : ""))),
+    h("div", {class: "panel"}, h("h2", {}, "News"),
+      h("p", {class: "muted"}, "The launcher shows the newest 5 on its next start."),
+      d.News.length ? table([
+        {label: "Date", get: n => n.Date},
+        {label: "Title", get: n => n.Title},
+        {label: "Text", get: n => n.Text},
+        {label: "", get: n => [h("button", {class: "btn", onclick: () => showNews(n)}, "Edit"), " ",
+          h("button", {class: "btn danger", onclick: () => remove(n)}, "Delete")]},
+      ], d.News) : h("p", {class: "muted"}, "No news yet.")));
+}
+
+// ---- Economy (balance.py) ----------------------------------------------------
+
+// Kinds of settings: where a change takes effect
+const BALANCE_KINDS = {
+  server: ["", "Server only, immediate"],
+  data: ["game data", "Players download settings.bin (~4 MB) at their next launcher start"],
+  ui: ["UI", "Players download the UI patch (small) at their next launcher start"],
+};
+const BALANCE_SECTIONS = {Mine: "Bling mine", Loot: "Rare bling loot (creatures)", Leagues: "Leagues", Competitions: "Competitions",
+                          Shop: "Bling shop (pack prices)", Objectives: "Quests (one-time, shown by the client)",
+                          Achievements: "Achievements (one-time, shown in the popup)"};
+const BALANCE_TOTALS = ["Objectives", "Achievements"];
+
+async function showEconomy() {
+  location.hash = "economy";
+  const d = await api("GetBalance");
+  const v = d.Values;
+  const enabled = h("input", {type: "checkbox", checked: v.Enabled || null});
+  const inputs = [];
+  const sections = {};
+  for (const f of d.Fields) {
+    const input = h("input", {type: "number", min: f.Min, max: f.Max, step: 1, value: v[f.Section][f.Key]});
+    inputs.push([f, input]);
+    const [tag, title] = BALANCE_KINDS[f.Kind];
+    (sections[f.Section] = sections[f.Section] || []).push(h("label", {},
+      h("span", {}, f.Label, tag ? " " : "", tag ? h("span", {class: "tag", title}, tag) : ""),
+      input, h("span", {class: "muted"}, `${f.Help} · default ${f.Default} · ${f.Min}–${f.Max}`)));
+  }
+  const totals = Object.fromEntries(BALANCE_TOTALS.map(name => [name, h("p", {class: "muted"})]));
+  const showTotals = () => BALANCE_TOTALS.forEach(name => totals[name].textContent =
+    `Total: ${fmt(inputs.filter(([f]) => f.Section === name)
+      .reduce((n, [, input]) => n + (+input.value || 0), 0))} blings`);
+  inputs.forEach(([, input]) => input.addEventListener("input", showTotals));
+  showTotals();
+  const save = async e => {
+    e.preventDefault();
+    const values = {Enabled: enabled.checked};
+    const changed = new Set();
+    if (values.Enabled !== v.Enabled) changed.add("data").add("ui");
+    for (const [f, input] of inputs) {
+      (values[f.Section] = values[f.Section] || {})[f.Key] = +input.value;
+      if (values.Enabled && +input.value !== v[f.Section][f.Key]) changed.add(f.Kind);
+    }
+    changed.delete("server");
+    if (changed.size && !confirm("Players will download at their next launcher start:\n" +
+        [...changed].map(k => "· " + BALANCE_KINDS[k][1]).join("\n") + "\nContinue?")) return;
+    try { await api("SetBalance", {values}); toast("Saved"); showEconomy(); }
+    catch (err) { toast(err.message, false); }
+  };
+  document.getElementById("main").replaceChildren(
+    h("div", {class: "panel"}, h("h2", {}, "Earned blings"),
+      h("p", {class: "muted"}, "Off = original rules. Values are kept while off. Plan: docs/70-bling-wirtschaft.md"),
+      h("form", {onsubmit: save},
+        h("label", {style: "display:flex;gap:8px;align-items:center;margin-bottom:12px"}, enabled,
+          h("b", {}, "Enabled"), h("span", {class: "tag", title: "Switching changes game data and UI"}, "game data, UI")),
+        Object.entries(sections).map(([name, rows]) => [
+          h("h2", {style: "margin-top:16px"}, BALANCE_SECTIONS[name] || name),
+          totals[name] || null,
+          h("div", {class: "econ"}, rows)]).flat(),
+        h("p", {class: "muted"}, "Game data version: ", d.ClientVersion || "original",
+          " · last change: ", when(d.Changed)),
+        h("button", {class: "btn primary", type: "submit"}, "Save"))));
+}
+
+// ---- Economy stats ---------------------------------------------------------
+
+async function showEcoStats(days = 7) {
+  location.hash = "ecostats";
+  const d = await api("GetEconomyStats", {days});
+  const earned = Object.values(d.Totals.Earned).reduce((a, b) => a + b, 0);
+  const spent = Object.values(d.Totals.Spent).reduce((a, b) => a + b, 0);
+  const perHour = (n, hours) => hours ? fmt(Math.round(n / hours)) : "–";
+  const sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
+  const pick = h("select", {onchange: e => showEcoStats(+e.target.value)},
+    [7, 14, 30, 90].map(n => h("option", {value: n, selected: n === d.Days || null}, `Last ${n} days`)));
+  const kindTable = (kinds, values, total) => table(
+    [{label: "Source", get: r => r}, {label: "Blings", num: true, get: r => fmt(values[r])},
+     {label: "Share", num: true, get: r => total ? Math.round(100 * values[r] / total) + " %" : "–"},
+     {label: "Per play hour", num: true, get: r => perHour(values[r], d.Hours)}],
+    kinds.filter(k => values[k]));
+  const top = Math.max(1, ...d.PerDay.map(x => Math.max(x.Earned, x.Spent)));
+  const bars = h("div", {class: "bars"}, d.PerDay.map(x => h("div", {title:
+      `${x.Day}: +${fmt(x.Earned)} / −${fmt(x.Spent)}`},
+    h("span", {class: "e", style: `height:${x.Earned / top * 60}px`}),
+    h("span", {class: "s", style: `height:${x.Spent / top * 60}px`}))));
+  document.getElementById("main").replaceChildren(
+    h("div", {class: "panel"}, h("h2", {}, "Bling economy"), pick,
+      d.Enabled ? null : h("p", {class: "muted"}, "Economy is switched off (original rules)."),
+      h("p", {}, `Earned ${fmt(earned)} · spent ${fmt(spent)} · play time ${d.Hours} h · `,
+        h("b", {}, `${perHour(earned, d.Hours)} blings per play hour`),
+        " (target 30–40 ongoing, more at the start)"),
+      d.PerDay.length ? [bars, h("p", {class: "muted"}, "Per day: earned (gold), spent (purple)")] : null),
+    h("div", {class: "panel"}, h("h2", {}, "Earned by source"),
+      kindTable(d.EarnKinds, d.Totals.Earned, earned)),
+    h("div", {class: "panel"}, h("h2", {}, "Spent"), kindTable(d.SpendKinds, d.Totals.Spent, spent)),
+    h("div", {class: "panel"}, h("h2", {}, "Players"), table([
+      {label: "Player", get: r => r.DisplayName},
+      {label: "Play time", num: true, get: r => r.Hours + " h"},
+      {label: "Earned", num: true, get: r => fmt(sum(r.Earned))},
+      {label: "Per hour", num: true, get: r => perHour(sum(r.Earned), r.Hours)},
+      {label: "Biggest source", get: r => Object.entries(r.Earned).sort((a, b) => b[1] - a[1])[0]?.[0] || "–"},
+      {label: "Loot cap left", num: true, get: r => `${fmt(r.LootLeft)} / ${fmt(d.LootCap)}`},
+      {label: "Spent", num: true, get: r => fmt(sum(r.Spent))},
+      {label: "Balance", num: true, get: r => fmt(r.Balance)}],
+      d.Players.sort((a, b) => sum(b.Earned) - sum(a.Earned)))),
+    h("p", {class: "muted"}, "Play time counts while the game talks to the server (gaps up to 10 minutes). ",
+      "Bookings before this page existed have no source and show as \"other\"."));
+}
+
+// ---- Server ----------------------------------------------------------------
+
+const bytes = n => n == null ? "–" : n >= 2 ** 30 ? (n / 2 ** 30).toFixed(1) + " GB" : (n / 2 ** 20).toFixed(1) + " MB";
+const duration = s => s == null ? "–" : [[86400, "d"], [3600, "h"], [60, "min"]]
+  .reduce((out, [n, unit]) => { if (s >= n || unit === "min") { out.push(Math.floor(s / n) + " " + unit); s %= n; } return out; }, [])
+  .join(" ");
+
+async function showServer() {
+  location.hash = "server";
+  const d = await api("GetServerStats");
+  const r = d.Requests;
+  const rows = [
+    ["CPU (container)", d.Cpu.Percent1 == null ? "– (first value 10 s after start)"
+      : `${d.Cpu.Percent1} % (1 min) · ${d.Cpu.Percent15} % (15 min) of ${d.Cpu.Cores} cores`],
+    ["Host load (1/5/15 min)", d.HostLoad ? d.HostLoad.join(" / ") + " (whole host, not just us)" : "–"],
+    ["Free memory", `${bytes(d.Memory.Free)} of ${bytes(d.Memory.Total)}`],
+    ["Free disk", `${bytes(d.Disk.Free)} of ${bytes(d.Disk.Total)}`],
+    ["Database (state folder)", bytes(d.StateBytes)],
+    ["Players online", `${d.Online} (seen in the last ${d.OnlineMinutes} minutes)`],
+    ["Requests per minute", `${r.PerMinute} (game requests, last ${r.WindowMinutes} minutes)`],
+    ["Response time", r.AvgMs == null ? "–" : `avg ${r.AvgMs} ms · p95 ${r.P95Ms} ms`],
+    ["Uptime game server", duration(d.UptimeSeconds)],
+    ["Uptime host", duration(d.HostUptimeSeconds)],
+  ];
+  document.getElementById("main").replaceChildren(
+    h("div", {class: "panel"}, h("h2", {}, "Server"),
+      h("button", {class: "btn", onclick: () => showServer().catch(e => toast(e.message, false))}, "Refresh"),
+      table([{label: "", get: x => x[0]}, {label: "", get: x => x[1]}], rows)));
+}
+
+// ---- Navigation ------------------------------------------------------------
+
+const views = {players: showPlayers, clans: showClans, purchases: showPurchases,
+               tracking: showTracking, chat: showChat, economy: showEconomy, ecostats: () => showEcoStats(),
+               news: showNews, server: showServer};
+// Switch the nav highlight and open a view
+function go(name, open) {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x.dataset.view === name));
+  (open || views[name])().catch(e => toast(e.message, false));
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+  views[b.dataset.view]().catch(e => toast(e.message, false));
+}));
+// ---- Login -----------------------------------------------------------------
+
+// Header: who is logged in; without any admin the tool stays open (local network only)
+async function session() {
+  const d = await api("session");
+  const who = document.getElementById("who");
+  who.replaceChildren(d.Name ? h("span", {}, d.Name, " ", h("button", {class: "btn", onclick: async () => {
+      await api("session", {action: "logout"}); showLogin(); }}, "Log out"))
+    : d.Required ? "" : "No admin yet – open to the local network. Make an admin under a player’s Login.");
+  return d;
+}
+
+function showLogin() {
+  document.getElementById("who").replaceChildren();
+  const name = h("input", {class: "wide", autocomplete: "username", placeholder: "Name"});
+  const pw = h("input", {class: "wide", type: "password", autocomplete: "current-password", placeholder: "Password"});
+  const submit = async e => {
+    e.preventDefault();
+    try { await api("session", {action: "login", name: name.value, password: pw.value});
+      await session(); start(); }
+    catch (err) { toast(err.message, false); }
+  };
+  document.getElementById("main").replaceChildren(h("div", {class: "panel", style: "max-width:320px;margin:40px auto"},
+    h("h2", {}, "Admin login"),
+    h("form", {class: "form", style: "flex-direction:column;align-items:stretch", onsubmit: submit},
+      name, pw, h("button", {class: "btn primary", type: "submit"}, "Log in"))));
+  name.focus();
+}
+
+// Maintenance switch: launcher shows its maintenance page, only admins can log in
+async function maintenance(set) {
+  const d = set === undefined ? await api("GetMaintenance")
+    : await api("SetMaintenance", {maintenance: set});
+  if (set === true) toast(`Maintenance on, ${d.Sessions} session(s) ended`);
+  else if (set === false) toast("Maintenance off");
+  const on = d.Maintenance;
+  document.getElementById("maint").replaceChildren(
+    on ? h("span", {class: "tag bad"}, "Maintenance") : "", " ",
+    h("button", {class: on ? "btn" : "btn danger", onclick: () => {
+      if (on || confirm("Start maintenance? Players are logged out and cannot log in until it ends (admins still can)."))
+        maintenance(!on).catch(e => toast(e.message, false)); }},
+      on ? "End maintenance" : "Start maintenance"));
+}
+
+// Initial view from the URL (#players, #player/<Id>, #clans, #clan/<Id>, #tracking)
+function start() {
+  maintenance().catch(e => toast(e.message, false));
+  const [view, arg] = location.hash.slice(1).split("/");
+  if (view === "player" && arg) go("players", () => showPlayer(+arg));
+  else if (view === "clan" && arg) go("clans", () => showClan(+arg));
+  else go(views[view] ? view : "players");
+}
+session().then(d => d.Required && !d.Name ? showLogin() : start())
+  .catch(e => toast(e.message, false));
+</script>
+</body>
+</html>

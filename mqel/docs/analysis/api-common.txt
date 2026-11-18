@@ -1,0 +1,13 @@
+SERVICE Contracts.Common.EnvironmentManager.ICommonEnvironmentService ServiceName=['CommonEnvironmentService.hqs'] TypePrivate=False
+    GetAllToolEnvironments() verbs=['JsonGetAttribute'] private=False other=[]
+    GetAllGameEnvironments() verbs=['JsonGetAttribute'] private=False other=[]
+    GetAllBranches() verbs=['JsonGetAttribute'] private=False other=[]
+SERVICE Contracts.Common.Services.ICrashReportService ServiceName=['CrashReportService.hqs'] TypePrivate=False
+    SendCrashReports() verbs=['JsonPostAttribute'] private=True other=[]
+SERVICE Contracts.Common.GameServer.IGameServerPublicationService ServiceName=['ServiceName GameServerPublicationService.hqs'] TypePrivate=False
+    GetDatabaseVersion() verbs=['JsonGetAttribute'] private=False other=[]
+SERVICE Contracts.Common.Services.IUtilityService ServiceName=['UtilityService.hqs'] TypePrivate=False
+    KeepAlive() verbs=['JsonPostAttribute'] private=False other=[]
+SERVICE Contracts.Common.Tracking.ITrackingService ServiceName=['TrackingService.hqs'] TypePrivate=False
+    Track(tracking) verbs=['JsonPostAttribute'] private=False other=[]
+    TrackBatch(trackingTags) verbs=['JsonPostAttribute'] private=False other=[]

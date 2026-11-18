@@ -1,0 +1,38 @@
+# Beispiel: Chat-Server als systemd-Dienst unter eigenem Benutzer ohne Rechte.
+# Installation (Pfad /opt/mqel und Benutzer mqel anpassen):
+#   useradd --system --home /opt/mqel mqel; chown -R mqel: /opt/mqel/server/state
+#   cp server/systemd/*.service /etc/systemd/system/
+#   systemctl enable --now mqel-chat mqel-game
+# Firewall: nur 8081/tcp (Spiel) und 5222/tcp (Chat) öffnen.
+[Unit]
+Description=Mighty Quest chat server (XMPP)
+After=network.target
+
+[Service]
+User=mqel
+Group=mqel
+WorkingDirectory=/opt/mqel
+ExecStart=/usr/bin/python3 -u server/xmpp_server.py --host 0.0.0.0 --port 5222 --state server/state/new --log server/state/xmpp.log
+Restart=on-failure
+RestartSec=5
+
+# Absicherung: nur server/state ist beschreibbar
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/mqel/server/state
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+MemoryMax=512M
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

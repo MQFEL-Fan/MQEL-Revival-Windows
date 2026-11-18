@@ -1,0 +1,9 @@
+{
+  "_hinweis": "Antwort-Overrides 'Service.hqs/Methode' -> JSON-Body. Wird pro Request neu geladen, Server läuft weiter. Start minimal, dann anhand von server/requests.log.jsonl erweitern.",
+  "AccountService.hqs/HealthCheck": true,
+  "SleepyGiantService.hqs/ValidateToken": {},
+  "SleepyGiantService.hqs/Login": {},
+  "SleepyGiantService.hqs/GetServerStatus": {},
+  "NewsService.hqs/GetNews": [],
+  "ShopService.hqs/GetSkus": []
+}

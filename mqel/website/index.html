@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mighty Quest Reborn</title>
+<meta name="description" content="A fan-made server that brings The Mighty Quest for Epic Loot back online: free to play, no real money.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="tag">Fan revival project</span>
+    <h1>The Mighty Quest<span>for Epic Loot: Reborn</span></h1>
+    <p class="lead">The original game shut down in 2015. We rebuilt its server from scratch, so you can build, defend and loot again: free, with no real money involved.</p>
+    <a class="btn" href="#install">How to play</a><a class="btn ghost" href="#changes">What's new</a>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>About</h2>
+    <div class="grid">
+      <div class="card"><div class="icon">🏰</div><h3>The original game</h3><p>Use the official Steam client, unchanged at its core. Build your castle, attack other players, climb the leagues.</p></div>
+      <div class="card"><div class="icon">⚙️</div><h3>A new server</h3><p>The original servers are gone. Ours is a clean reimplementation of the game protocol and rules.</p></div>
+      <div class="card"><div class="icon">💎</div><h3>Free to play, for real</h3><p>There is no store and no payment. Every bling is earned in game.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="video">
+    <div class="wrap">
+      <h2>See it running</h2>
+      <iframe class="video" title="The Mighty Quest for Epic Loot: Reborn" src="https://clip.place/videos/embed/7QFoxx7uAkPZyJkmvURcY4" frameborder="0" allowfullscreen sandbox="allow-same-origin allow-scripts allow-popups allow-forms" loading="lazy"></iframe>
+    </div>
+  </section>
+
+  <section id="changes">
+  <div class="wrap">
+    <h2>What we changed</h2>
+    <div class="grid">
+      <a class="card" href="blings.html"><h3>Grind, don't pay</h3><p>Blings were bought with real money. Now you earn them through quests, achievements, leagues, competitions, the bling mine and rare drops from creatures.</p><span class="more">Ways to earn blings →</span></a>
+      <div class="card"><h3>Packs for blings</h3><p>The special packs that used to cost real money now sell for blings in an in-game shop: hero, pet and castle packs.</p></div>
+      <div class="card"><h3>Reduced dark patterns</h3><p>No daily-login rewards and no streaks to keep up. Packs no longer sell early access to heroes.</p></div>
+      <div class="card"><h3>UI fixes</h3><p>Various fixes to the game interface, delivered automatically through the launcher.</p></div>
+      <div class="card"><h3>The whole game</h3><p>Castle building, attacks, replays, leagues, competitions, guilds and chat all run on the new server.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <ol class="steps">
+      <li><strong>Install via Steam:</strong> open <code>steam://install/239220</code> (you can paste it into your browser).</li>
+      <li><strong>Download</strong> our <a href="PublicLauncherSettings.json" download>PublicLauncherSettings.json</a> and use it to replace the existing file in the installation folder (<code>Launcher\</code>).</li>
+      <li><strong>Choose how you want to play:</strong>
+        <div class="ways">
+          <div class="way">
+            <span class="badge">Steam login and achievements</span>
+            <h3>A: Start from Steam</h3>
+            <p>Download <a href="steam-launcher-patch.cmd" download>steam-launcher-patch.cmd</a>, put it into the installation folder and double-click it. Then start the game from Steam.</p>
+            <p class="hint">The script lets your launcher install our updates when it is started from Steam and keeps a backup (<code>PublicLauncher.exe.bak</code>). If Windows SmartScreen warns you, choose <em>More info → Run anyway</em>. Achievements you already earned unlock on Steam during your first fight. You log in with your Steam account, no password needed.</p>
+            <p class="alert-link">Steam reports a virus (0xE1)? <a href="#defender">Here's the fix</a>.</p>
+          </div>
+          <div class="way">
+            <span class="badge plain">Without Steam</span>
+            <h3>B: Start the launcher directly</h3>
+            <p>Delete <code>steam_appid.txt</code> from the installation folder, then start <code>Launcher\PublicLauncher.exe</code>.</p>
+            <p class="hint">No script needed, but you log in with name and password and get no Steam achievements.</p>
+          </div>
+        </div>
+      </li>
+      <li><strong>Log in</strong> and let the launcher finish its update.
+        <ul>
+          <li><strong>A (Steam):</strong> the launcher recognises your Steam account. New here? Click <em>Play as new Steam player</em>, your account gets the name from your Steam profile. Already played with us? Log in once with your name and password to link your account, after that Steam logs you in automatically.</li>
+          <li><strong>B (without Steam):</strong> create an account with name and password. The 2015 launcher can only load its login page over plain HTTP, so please <strong>use a password you don't use anywhere else</strong>.</li>
+        </ul></li>
+    </ol>
+    <div class="alert" id="defender">
+      <span class="badge warn">Known issue</span>
+      <h3>Steam: "the file contains a virus or potentially unwanted software" (0xE1)</h3>
+      <p>Windows Defender blocks the patched launcher from way A without showing a warning of its own. It is a false positive. Steam then quietly restores the original files, which is why the launcher shows "Maintenance" afterwards.</p>
+      <ol>
+        <li>Open <strong>Windows Security → Virus &amp; threat protection → Protection history</strong>.</li>
+        <li>Open the entry for <code>PublicLauncher.exe</code> and choose <em>Allow on device</em>.</li>
+        <li>Replace <code>PublicLauncherSettings.json</code> again (step 2) and run <code>steam-launcher-patch.cmd</code> again.</li>
+      </ol>
+      <p class="hint">Way B needs no patch and is not affected.</p>
+    </div>
+    <div class="alert tip" id="dxvk">
+      <span class="badge plain">Recommended</span>
+      <h3>Crashes or stutter on a modern PC? Use DXVK</h3>
+      <p>The game uses DirectX 9, which modern graphics drivers handle poorly. <a href="https://github.com/doitsujin/dxvk/releases">DXVK</a> translates it to Vulkan, and players report that the game runs stable with it.</p>
+      <ol>
+        <li>Download the latest <code>dxvk-….tar.gz</code> from the <a href="https://github.com/doitsujin/dxvk/releases">DXVK releases page</a> and extract it (Windows 11 opens it directly, otherwise use 7-Zip).</li>
+        <li>Copy <code>x32\d3d9.dll</code> from it into <code>GameData\Bin\</code> in the installation folder, next to <code>MightyQuest.exe</code>. Only this one file, and from <code>x32</code>, not <code>x64</code>: the game is 32-bit.</li>
+        <li>Start the game as usual.</li>
+      </ol>
+      <p class="hint">Needs a graphics card with Vulkan support. If the game won't start on an older card, try DXVK 1.10.3. To undo, delete <code>d3d9.dll</code> again.</p>
+    </div>
+    <p class="note">To find the installation folder, right-click the game in Steam and choose Manage → Browse local files.</p>
+    <p class="note"><strong>Ultrawide monitor (21:9)?</strong> The game is made for 16:9: in fullscreen at a resolution like 3440×1440, clicks land next to the buttons. Use a 16:9 resolution (e.g. 2560×1440) or windowed mode instead.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">A non-commercial fan project. Not affiliated with or endorsed by Ubisoft. <em>The Mighty Quest for Epic Loot</em> is a trademark of its respective owner.</div>
+</footer>
+</body>
+</html>

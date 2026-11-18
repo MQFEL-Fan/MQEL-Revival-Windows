@@ -1,0 +1,10 @@
+[Unit]
+Description=Mighty Quest state backup to Cloudflare R2, every 6 hours
+
+[Timer]
+OnCalendar=00/6:17
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

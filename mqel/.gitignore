@@ -1,0 +1,37 @@
+# Original-Archive (irreplaceable, ~1 GB) — nie committen
+cdn/
+*.7z
+
+# Zusammengesetzter Client-Baum (~1,8 GB, aus cdn/ reproduzierbar per client/BUILD.md)
+client/
+
+# Python-Nebeneffekte
+__pycache__/
+*.pyc
+
+# Laufzeit-Logs der Server (wachsen ständig, maschinenspezifisch)
+server/*.log
+server/*.jsonl
+server/*.out
+server/*.pid
+
+# Persistenter Spielzustand (Laufzeit, zurücksetzen = löschen)
+server/state/
+
+# Länder-Datenbank (tools/update_geoip.py, db-ip.com CC BY 4.0)
+server/data/geoip-country.csv.gz
+
+# Dekompilierter Original-Code (dnSpy-Export der GameplayToolbox, Ubisoft) - nie committen
+decompiled/
+
+# GameplayToolbox (enthält dekompilierten Ubisoft-Code), nur lokal
+toolbox/
+website/blings.html
+website/.well-known/
+mqel-client.tar.gz
+start.bat
+
+*.pem
+*.key
+.env
+*.db

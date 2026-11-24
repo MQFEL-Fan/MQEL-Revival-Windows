@@ -12,8 +12,11 @@ SHOWN = 5  # Einträge auf der Launcher-Seite
 
 
 class News:
-    def __init__(self, path):
+    def __init__(self, path, listener=None):
         self.path = path
+        # listener(action, item): "save"/"delete" nach jeder Änderung
+        # (discord_patch_notes.NewsNotifier)
+        self.listener = listener
         self.lock = threading.Lock()
         self.items = []
         if os.path.exists(path):
@@ -47,12 +50,17 @@ class News:
             item.update(Date=date, Title=title, Text=text)
             self.items.sort(key=lambda i: (i["Date"], i["Id"]), reverse=True)
             self._save()
-            return dict(item)
+            item = dict(item)
+        if self.listener:
+            self.listener("save", item)
+        return item
 
     def delete(self, item_id):
         with self.lock:
             self.items = [i for i in self.items if i["Id"] != item_id]
             self._save()
+        if self.listener:
+            self.listener("delete", {"Id": item_id})
 
     def html(self):
         """HTML der neuesten Einträge für die Launcher-Seite ('' ohne News)."""

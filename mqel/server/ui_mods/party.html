@@ -1,0 +1,300 @@
+<!-- MQEL party + co-op raid live panel (ui_patches.py, patch 17; server
+     parties.py, raids.py; guide docs/89-coop-raids.md). MQEL_PARTY_URLS and
+     MQEL_PARTY_ICON are replaced by the server. ES5 only (Chromium 2015).
+     Uses the .mqel-win styles of ingame_market.html (same page). -->
+<style>
+#mqel-party-button{background:url('MQEL_PARTY_ICON') no-repeat;position:relative;display:block;width:40px;height:40px;cursor:pointer}
+#mqel-party-button:hover{background-position:0px -40px}
+#mqel-party-button.selected{background-position:0px -80px}
+#mqel-party-button i{position:absolute;right:-2px;top:-2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#d8322c;color:#fff;font-size:10px;font-style:normal;line-height:14px;text-align:center;display:none}
+#mqel-party{left:50%;top:150px;width:620px;margin-left:-310px;max-height:600px}
+#mqel-party .mqel-head{background:#b48cf0;box-shadow:0 3px 0 #7a4fc0}
+#mqel-party .mqel-pbody{padding:40px 18px 14px;max-height:540px;overflow-y:auto}
+#mqel-party h4{margin:12px 0 6px;color:#f6c344;font-size:13px;text-transform:uppercase}
+.mqel-prow{position:relative;padding:6px 8px 6px 14px;border-bottom:1px solid #0c4560;min-height:22px}
+.mqel-prow .dot{position:absolute;left:2px;top:12px;width:8px;height:8px;border-radius:50%;background:#d8322c}
+.mqel-prow .dot.on{background:#37d43a}
+.mqel-prow .r{position:absolute;right:6px;top:4px}
+.mqel-prow .crown{color:#f6c344;margin-left:6px;font-size:11px}
+.mqel-bar{display:inline-block;width:120px;height:8px;background:#062433;border:1px solid #0a2633;border-radius:4px;vertical-align:middle;overflow:hidden}
+.mqel-bar b{display:block;height:100%;background:#37d43a}
+#mqel-raid-live{display:none;position:fixed;left:14px;top:150px;z-index:2147480980;width:230px;padding:8px 10px;background:rgba(8,32,44,.88);border:2px solid #b48cf0;border-radius:8px;color:#fff;font-size:12px;pointer-events:none}
+#mqel-raid-live b.t{display:block;color:#d9c2ff;font-size:13px;text-transform:uppercase;margin-bottom:4px}
+#mqel-raid-live .m{margin:5px 0}
+#mqel-raid-live .n{font-weight:bold}
+#mqel-raid-live .s{color:#a9c7d4;font-size:11px}
+#mqel-party-toast{display:none;position:fixed;left:50%;top:70px;width:360px;margin-left:-180px;z-index:2147480996;padding:10px 14px;background:rgba(8,32,44,.95);border:2px solid #b48cf0;border-radius:8px;color:#fff;font-size:13px;text-align:center}
+</style>
+<div id="mqel-party" class="mqel-win">
+  <div class="mqel-head">Party</div><a class="mqel-x" id="mqel-party-close"></a>
+  <div class="mqel-pbody" id="mqel-party-body"></div>
+  <div class="mqel-foot" id="mqel-party-foot" style="position:static;padding:0 18px 10px;color:#a9c7d4;font-size:12px"></div>
+</div>
+<div id="mqel-raid-live"></div>
+<div id="mqel-coop-warn" class="mqel-win" style="left:50%;top:260px;width:520px;margin-left:-260px">
+  <div class="mqel-head" style="background:#b48cf0;box-shadow:0 3px 0 #7a4fc0">Co-op Raids</div>
+  <div style="padding:40px 22px 16px">
+    <p style="margin:0 0 10px">The Co-op Raids are <b>procedural</b>: the castles are generated for your party and are different
+    from any story castle. The "More castles" button gives your whole party new ones.</p>
+    <p class="mqel-note" style="margin:0 0 14px">Everyone in your party gets the same castles but plays them in their own game, with
+    their own loot. Your friends' health, gold and loot show on the left during a raid.</p>
+    <div style="text-align:right"><label style="float:left;color:#a9c7d4;font-size:12px;cursor:pointer"><input type="checkbox" id="mqel-coop-nomore"/> Don't show again</label><a class="mqel-btn" id="mqel-coop-cancel">Cancel</a><a class="mqel-btn y" id="mqel-coop-go">Enter Co-op Raids</a></div>
+  </div>
+</div>
+<div id="mqel-party-toast"></div>
+<div id="mqel-party-prompt" class="mqel-win" style="left:50%;top:200px;width:460px;margin-left:-230px">
+  <div class="mqel-head" style="background:#b48cf0;box-shadow:0 3px 0 #7a4fc0" id="mqel-prompt-title">Party</div>
+  <div style="padding:40px 22px 16px"><p id="mqel-prompt-text" style="margin:0 0 14px"></p>
+    <div style="text-align:right"><a class="mqel-btn" id="mqel-prompt-no">No thanks</a><a class="mqel-btn y" id="mqel-prompt-yes">Yes</a></div></div>
+</div>
+<script type="text/javascript">
+(function(){
+var BASES=MQEL_PARTY_URLS,base=null,w=null,open=false,st=null,seenInvites={},inAttack=false,live={Life:0,MaxLife:0,Gold:0,LifeForce:0,Xp:0,Items:0},start={gold:null,lf:null,xp:null};
+var HERO={2:"Knight",3:"Archer",4:"Mage",5:"Runaway"};
+function $id(i){return document.getElementById(i);}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fmt(n){n=Math.round(+n||0);return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function req(method,path,body,done,i){
+  var list=base?[base]:BASES;i=i||0;if(i>=list.length){done(0,{});return;}
+  var x=new XMLHttpRequest(),fin=false,t=setTimeout(function(){try{x.abort();}catch(e){}},8000);
+  x.onreadystatechange=function(){if(x.readyState!=4||fin)return;fin=true;clearTimeout(t);
+    /* not this server (no reply, or another program on that port): next address */
+    var ours=false;try{ours=!!x.getResponseHeader("X-MQEL");}catch(e){}
+    if(!base&&(x.status===0||!ours)){req(method,path,body,done,i+1);return;}
+    if(x.status)base=base||list[i];var d={};try{d=JSON.parse(x.responseText||"{}");}catch(e){}done(x.status,d);};
+  try{x.open(method,list[i]+path,true);if(body!=null)x.setRequestHeader("Content-Type","text/plain");x.send(body!=null?JSON.stringify(body):null);}
+  catch(e){fin=true;clearTimeout(t);if(!base)req(method,path,body,done,i+1);else done(0,{});}
+}
+var sErr={s:-1,d:{}},failMsg="";
+function session(done){
+  var id=window.hyperquest&&hyperquest.cache&&hyperquest.cache.AccountId;
+  if(!id){sErr={s:-1,d:{}};done(false);return;}
+  req("GET","/market/session?a="+id,null,function(s,d){w=s==200&&d.w?d.w:null;sErr={s:s,d:d};done(!!w);});
+}
+function call(action,body,done){
+  var go=function(retry){
+    var m=body?"POST":"GET",path="/party/"+action;
+    if(body)body.w=w;else path+="?w="+encodeURIComponent(w||"");
+    req(m,path,body,function(s,d){if(s==401&&retry){session(function(ok){if(ok)go(false);else done(s,d);});return;}done(s,d);});
+  };
+  if(!w)session(function(ok){if(ok)go(false);else done(sErr.s,sErr.d);});else go(true);
+}
+function toast(t){var e=$id("mqel-party-toast");e.innerHTML=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none";},6000);}
+function say(t,c){$id("mqel-party-foot").innerHTML="<span style='color:"+(c=="err"?"#ff7b7b":"#8fe36b")+"'>"+esc(t)+"</span>";}
+function badge(){
+  var n=st?st.Invites.length:0,b=$id("mqel-party-badge");if(b){b.style.display=n?"block":"none";b.innerHTML=n;}
+  if(st&&!inAttack)for(var i=0;i<st.Invites.length;i++){var k=st.Invites[i].Party;if(!seenInvites[k]){seenInvites[k]=1;
+    prompt_("Party invitation","<b>"+esc(st.Invites[i].From)+"</b> invites you to their party (Co-op Raids together).","Join",
+      (function(pid){return function(){act("accept",{party:pid},"You joined the party!");};})(k),
+      (function(pid){return function(){act("decline",{party:pid},"Invitation declined.");};})(k));break;}}
+  raidPrompt();
+}
+function showBonus(d){if(d&&d.Bonus)toast("<b>Party bonus!</b> Your party cleared Co-op Raid "+d.Bonus.Tier+" together: +"+fmt(d.Bonus.Gold)+" gold, +"+fmt(d.Bonus.LifeForce)+" life force and "+d.Bonus.Items+" crafting materials.");}
+function refresh(){call("state",null,function(s,d){if(s==200){st=d;showBonus(d);badge();raidStart();if(open)render();
+  if(regionWait&&d.HomeRegion&&!inAttack){regionWait=false;setLast(d.HomeRegion);goRegion(d.HomeRegion);}}
+  else{failMsg=s===-1?"Waiting for the game...":!s?"The server can't be reached.":(d&&d.Error)||("Server error "+s+".");if(open&&!st)render();}});}
+var promptCb=null;
+function prompt_(title,text,yes,onYes,onNo){
+  $id("mqel-prompt-title").innerHTML=esc(title);$id("mqel-prompt-text").innerHTML=text;$id("mqel-prompt-yes").innerHTML=esc(yes);
+  promptCb=[onYes,onNo];$id("mqel-party-prompt").className="mqel-win open";
+}
+function promptClose(i){$id("mqel-party-prompt").className="mqel-win";var c=promptCb;promptCb=null;if(c&&c[i])c[i]();}
+function meId(){var i;for(i=0;st&&i<st.Members.length;i++)if(st.Members[i].Me)return st.Members[i].Id;return null;}
+var askedRound={},startedRound={},menu=null;
+function raidPrompt(){
+  var r=st&&st.Raid,me=meId();
+  if(!r||r.Start||inAttack||!me||r.Ready.indexOf(me)>=0||askedRound[r.Round])return;
+  askedRound[r.Round]=1;
+  prompt_("Co-op raid","Your party leader picked <b>"+esc(r.Name)+"</b> (level "+r.Level+"). Ready? Everyone starts together once all are ready.","Ready",
+    function(){act("ready",{yes:1},"You are ready.");},function(){act("ready",{yes:0},"You said no: the leader can pick another raid.");});
+}
+function raidStart(){
+  /* all ready: every game opens the same raid castle at the same moment */
+  var r=st&&st.Raid;if(!r||!r.Start||r.Over||startedRound[r.Round]||inAttack)return;
+  startedRound[r.Round]=1;setLast(11);
+  var wait=Math.max(0,(r.Start-r.Now)*1000);
+  toast("Everyone is ready! <b>"+esc(r.Name)+"</b> starts in "+Math.ceil(wait/1000)+" seconds.");
+  setTimeout(function(){
+    if(inAttack)return;
+    var url="game://attack/startAttack?castleAccountId="+r.Castle+"&castleMode=UbisoftCastle&attackSource=RegularSelection&attackRegionId=11&challengeId=0&castleLevel="+r.Level+"&revengeAttackId=";
+    try{Facade.getInstance().getController("NavigationController").requestNavigation(url,{});}
+    catch(e){var a=document.createElement("a");a.href=url;document.body.appendChild(a);a.click();}
+  },wait);
+}
+function raidSection(){
+  var r=st.Raid,h="<h4>Party raid</h4>",i;
+  if(!st.Party)return "";
+  if(st.LastNo&&(!r))h+="<div class='mqel-note'>"+esc(st.LastNo)+" said no to the last raid.</div>";
+  if(!r||r.Over){
+    if(r&&r.Over)h+="<div class='mqel-note'>Your party finished <b>"+esc(r.Name)+"</b>.</div>";
+    if(st.Leader){
+      h+="<div class='mqel-note'>Pick the raid your party plays next:</div>";
+      if(!menu)h+="<a class='mqel-btn y' id='mqel-raid-menu'>Show raids</a>";
+      else{h+="<div style='max-height:180px;overflow-y:auto'>";for(i=0;i<menu.length;i++){var c=menu[i];
+        h+="<div class='mqel-prow'>Level "+c.Level+" &middot; "+(c.Boss?"<b style='color:#f6c344'>"+esc(c.Name)+" (boss)</b>":esc(c.Name))+
+          "<span class='r'><a class='mqel-btn y' data-pick='"+c.Id+"'>Pick</a></span></div>";}h+="</div>";}
+    }else h+="<div class='mqel-note'>Waiting for the leader to pick a raid.</div>";
+    return h;
+  }
+  h+="<div class='mqel-prow'><b>"+esc(r.Name)+"</b> <span class='mqel-sub'>level "+r.Level+"</span><span class='r mqel-sub'>"+
+    (r.Start?"in the raid":r.Ready.length+"/"+st.Members.length+" ready")+"</span></div>";
+  if(!r.Start){var me=meId();
+    if(r.Ready.indexOf(me)<0)h+="<div style='text-align:right'><a class='mqel-btn' data-ready='0'>No thanks</a><a class='mqel-btn y' data-ready='1'>Ready</a></div>";
+    else h+="<div class='mqel-note'>Waiting for the others to be ready.</div>";}
+  return h;
+}
+function member(m){
+  var l=m.Live,h="<div class='mqel-prow'><span class='dot"+(m.Online?" on":"")+"'></span><b>"+esc(m.Name)+"</b>"+(m.Me?" (you)":"")+
+    (m.Leader?"<span class='crown'>&#9813; leader</span>":"")+" <span class='mqel-sub'>Level "+m.Level+" "+(HERO[m.Hero]||"")+"</span>";
+  var rn=st.Raid&&m.Raid==st.Raid.Castle?esc(st.Raid.Name):"a raid";
+  if(m.Raid&&l)h+="<div class='mqel-sub'>In "+rn+": "+(l.MaxLife?Math.round(100*l.Life/l.MaxLife)+"% health, ":"")+fmt(l.Gold)+" gold</div>";
+  else if(m.Raid)h+="<div class='mqel-sub'>In "+rn+"</div>";
+  if(st.Leader&&!m.Me&&st.Party)h+="<span class='r'><a class='mqel-btn r' data-kick='"+m.Id+"'>Remove</a></span>";
+  return h+"</div>";
+}
+function render(){
+  if(!st){$id("mqel-party-body").innerHTML="<div class='mqel-empty'>"+esc(failMsg||"Loading...")+"</div>";return;}
+  var h="",i,f,full=st.Members.length>=st.Max;
+  if(st.Invites.length){h+="<h4>Invitations</h4>";for(i=0;i<st.Invites.length;i++){f=st.Invites[i];
+    h+="<div class='mqel-prow'><b>"+esc(f.From)+"</b> <span class='mqel-sub'>party of "+f.Size+"</span><span class='r'><a class='mqel-btn y' data-accept='"+f.Party+"'>Join</a><a class='mqel-btn' data-decline='"+f.Party+"'>No thanks</a></span></div>";}}
+  h+="<h4>"+(st.Party?"Your party ("+st.Members.length+"/"+st.Max+")":"No party yet")+"</h4>";
+  for(i=0;i<st.Members.length;i++)h+=member(st.Members[i]);
+  if(st.Party)h+="<div style='text-align:right;margin-top:6px'><a class='mqel-btn r' id='mqel-party-leave'>Leave party</a></div>";
+  h+=raidSection();
+  h+="<div class='mqel-note'>The leader picks a raid here, everyone presses Ready, and all of you start the same castle together (each in your own game, with your own loot). After it, the leader picks the next one. The \"More castles\" button on the Co-op Raids map gives new castles between raids.</div>";
+  h+="<h4>Invite friends</h4>";
+  if(!st.Friends.length)h+="<div class='mqel-note'>Add friends first (Friends button).</div>";
+  for(i=0;i<st.Friends.length;i++){f=st.Friends[i];
+    h+="<div class='mqel-prow'><span class='dot"+(f.Online?" on":"")+"'></span>"+esc(f.Name)+"<span class='r'>"+
+      (f.InParty?"<span class='mqel-sub'>in your party</span>":f.Busy?"<span class='mqel-sub'>in another party</span>":
+       (!st.Leader||full)?"":"<a class='mqel-btn y' data-invite='"+f.Id+"'>Invite</a>")+"</span></div>";}
+  $id("mqel-party-body").innerHTML=h;
+}
+function act(action,body,okMsg){call(action,body,function(s,d){if(s==200){say(okMsg);refresh();}else say(d.Error||"Something went wrong.","err");});}
+function onClick(ev){
+  var t=ev.target,a;while(t&&t!==this&&!(t.getAttribute&&(t.id||t.getAttribute("data-invite")||t.getAttribute("data-accept")||t.getAttribute("data-decline")||t.getAttribute("data-kick")||t.getAttribute("data-pick")||t.getAttribute("data-ready"))))t=t.parentNode;
+  if(!t||t===this)return;
+  if(t.id=="mqel-party-close"){hide();return;}
+  if(t.id=="mqel-party-leave"){act("leave",{},"You left the party.");return;}
+  if((a=t.getAttribute("data-invite"))){act("invite",{target:+a},"Invitation sent.");return;}
+  if((a=t.getAttribute("data-accept"))){act("accept",{party:a},"You joined the party!");return;}
+  if((a=t.getAttribute("data-decline"))){act("decline",{party:a},"Invitation declined.");return;}
+  if((a=t.getAttribute("data-kick"))){act("kick",{target:+a},"Player removed.");return;}
+  if(t.id=="mqel-raid-menu"){call("raids",null,function(s2,d){if(s2==200){menu=d.Raids;render();}else say(d.Error||"Can't load the raids.","err");});return;}
+  if((a=t.getAttribute("data-pick"))){menu=null;act("select",{castle:+a},"Raid picked: your party can get ready.");return;}
+  if((a=t.getAttribute("data-ready"))!=null){act("ready",{yes:+a},+a?"You are ready.":"You said no.");return;}
+}
+function show(){open=true;$id("mqel-party").className="mqel-win open";$id("mqel-party-button").className="selected";say("");render();refresh();}
+function hide(){open=false;$id("mqel-party").className="mqel-win";$id("mqel-party-button").className="";}
+
+/* -- live raid panel: own status to the party, the others' status shown -- */
+function liveTick(){
+  if(!inAttack)return;
+  call("live",{Life:live.Life,MaxLife:live.MaxLife,Gold:live.Gold,LifeForce:live.LifeForce,Xp:live.Xp,Items:live.Items,State:live.Life<=0&&live.MaxLife?"down":"fighting"},function(s,d){
+    if(s!=200)return;st=d;showBonus(d);
+    var me=null,i,others=[],m,h;for(i=0;i<d.Members.length;i++){m=d.Members[i];if(m.Me)me=m;else others.push(m);}
+    var el=$id("mqel-raid-live");
+    if(!me||!me.Raid||!others.length){el.style.display="none";return;}
+    h="<b class='t'>Co-op raid party</b>";
+    for(i=0;i<others.length;i++){m=others[i];var l=m.Live;
+      h+="<div class='m'><span class='n'>"+esc(m.Name)+"</span> ";
+      if(m.Raid&&l){var r=l.MaxLife?Math.max(0,l.Life/l.MaxLife):0;
+        h+=(l.State=="down"?"<span class='s'>down!</span>":"")+"<br/><span class='mqel-bar'><b style='width:"+Math.round(100*r)+"%;background:"+(r<0.3?"#d8322c":"#37d43a")+"'></b></span>"+
+          "<div class='s'>"+fmt(l.Gold)+" gold &middot; "+fmt(l.LifeForce)+" life force &middot; "+fmt(l.Items)+" items</div>";}
+      else h+="<div class='s'>"+(m.Raid?"loading the raid...":m.Online?"in the lobby":"offline")+"</div>";
+      h+="</div>";}
+    el.innerHTML=h;el.style.display="block";
+  });
+}
+function bindAttack(){
+  var ec=window.hyperquest&&hyperquest.eventController;if(!ec)return false;
+  function b(name,fn){if(ec[name]&&ec[name].bind)ec[name].bind(fn,window);}
+  b("startAttackEvent",function(){inAttack=true;live={Life:0,MaxLife:0,Gold:0,LifeForce:0,Xp:0,Items:0};start={gold:null,lf:null,xp:null};});
+  b("attackLoadedEvent",function(){inAttack=true;});
+  b("heroLifeChangedEvent",function(a){if(a){live.Life=a.Life;live.MaxLife=a.MaxLife;}});
+  b("walletCurrencyUpdatedInAttackEvent",function(a){if(!a)return;var c=a.CurrencyType;
+    /* the game passes the enum as a name ("IGC") or as a number */
+    if(c==2||c=="IGC"){if(start.gold==null)start.gold=a.NewAmount-(a.AmountChange||0);live.Gold=a.NewAmount-start.gold;}
+    else if(c==4||c=="LifeForce"){if(start.lf==null)start.lf=a.NewAmount-(a.AmountChange||0);live.LifeForce=a.NewAmount-start.lf;}});
+  b("heroXpChangedEvent",function(a){if(!a||!inAttack)return;if(start.xp==null)start.xp=a.Xp;live.Xp=a.Xp-start.xp;});
+  b("itemLootedEvent",function(){live.Items++;});
+  b("castleSelectionPopulatedEvent",onRegionShown);
+  return true;
+}
+
+/* start region: the client itself opens the co-op raids (region 11, the
+   highest id) at every game start and on the Attack button. Game start ->
+   the player's home region (server: raids.home_region); Attack -> the last
+   region the player was in. Only an automatic landing in region 11 is
+   redirected; a region picked on the map (or a party raid) is kept. */
+var regionPick=null,regionPickAt=0,regionWait=false;
+/* the lobby page reloads between scenes: the last region lives in
+   localStorage with a heartbeat; older than 90 s = a new game start */
+function now_(){return new Date().getTime();}
+function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,String(v));}catch(e){}}
+function load(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+var lastRegion=(function(){var t=+load("mqelRegionBeat")||0,r=parseInt(load("mqelLastRegion"),10);return now_()-t<90000&&r?r:null;})();
+function setLast(id){lastRegion=id;store("mqelLastRegion",id);}
+store("mqelRegionBeat",now_());setInterval(function(){store("mqelRegionBeat",now_());},15000);
+function goRegion(id){
+  setTimeout(function(){
+    try{Facade.getInstance().getController("NavigationController").requestNavigation("game://attackSelection/showCastleSelection?regionId="+id,{});}catch(e){}
+  },300);
+}
+function onRegionShown(a){
+  var id=a&&a.AttackRegion?parseInt(a.AttackRegion.AttackRegionId,10):0;if(!id)return;
+  regionWait=false;
+  if(regionPick==id&&now_()-regionPickAt<30000){setLast(id);regionPick=null;return;}
+  if(id!=11){setLast(id);return;}
+  if(lastRegion==11)return;
+  var target=lastRegion||(st&&st.HomeRegion);
+  if(target){setLast(target);goRegion(target);}
+  else{regionWait=true;refresh();}   /* state not loaded yet: redirect when it arrives */
+}
+
+/* warning before entering the procedural co-op region (map island 11) */
+var coopTarget=null,coopPass=false;
+function regionOf(t){while(t&&t.getAttribute){if(t.getAttribute("attack-region-id"))return t;t=t.parentNode;}return null;}
+function coopWarn(){
+  document.addEventListener("click",function(ev){
+    var el=regionOf(ev.target);
+    if(el&&el.getAttribute("disabled")!="disabled"){regionPick=parseInt(el.getAttribute("attack-region-id"),10);regionPickAt=now_();}
+    if(!el||el.getAttribute("attack-region-id")!="11"||coopPass)return;
+    var off=false;try{off=window.localStorage&&localStorage.getItem("mqelCoopWarnOff")=="1";}catch(e){}
+    if(off||(st&&st.Party))return;
+    if(el.getAttribute("disabled")=="disabled")return;
+    ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
+    coopTarget=el;$id("mqel-coop-warn").className="mqel-win open";
+  },true);
+  $id("mqel-coop-cancel").addEventListener("click",function(){$id("mqel-coop-warn").className="mqel-win";coopTarget=null;},false);
+  $id("mqel-coop-nomore").addEventListener("change",function(){try{localStorage.setItem("mqelCoopWarnOff",this.checked?"1":"0");}catch(e){}},false);
+  $id("mqel-coop-go").addEventListener("click",function(){
+    $id("mqel-coop-warn").className="mqel-win";if(!coopTarget)return;
+    coopPass=true;try{if(window.jQuery)jQuery(coopTarget).trigger("click");else coopTarget.click();}catch(e){}coopPass=false;coopTarget=null;
+  },false);
+}
+
+function init(){
+  coopWarn();
+  $id("mqel-prompt-yes").addEventListener("click",function(){promptClose(0);},false);
+  $id("mqel-prompt-no").addEventListener("click",function(){promptClose(1);},false);
+  /* Esc closes our windows (and doesn't open the game menu then) */
+  document.addEventListener("keydown",function(ev){
+    if(ev.keyCode!=27)return;
+    var w=$id("mqel-coop-warn");
+    if(w.className.indexOf("open")>=0){w.className="mqel-win";coopTarget=null;}
+    else if(open)hide();else return;
+    ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
+  },true);
+  var b=$id("mqel-party-button");
+  if(b)b.addEventListener("click",function(ev){ev.preventDefault();if(open)hide();else show();},false);
+  $id("mqel-party").addEventListener("click",onClick,false);
+  if(!bindAttack()){var n=0,t=setInterval(function(){if(bindAttack()||++n>40)clearInterval(t);},500);}
+  var tries=0,t2=setInterval(function(){tries++;if(window.hyperquest&&hyperquest.cache&&hyperquest.cache.AccountId){clearInterval(t2);refresh();}else if(tries>100)clearInterval(t2);},3000);
+  /* lobby: every 3 s in a party (raid ready / start), else every 10 s */
+  var tick=0;setInterval(function(){if(inAttack)return;tick++;if((st&&st.Party)||tick%3==0)refresh();},3000);
+  setInterval(liveTick,3000);
+}
+if(document.readyState=="loading")document.addEventListener("DOMContentLoaded",init,false);else init();
+})();
+</script>

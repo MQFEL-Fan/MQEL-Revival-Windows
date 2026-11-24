@@ -321,12 +321,14 @@ class AdminService:
                     "CountryCode": a.get("CountryCode") or "",
                     "LastSeenOnline": a.get("LastSeenOnline")}
 
+        shared = self.iplog.shared() if self.iplog else {}
         for token, account_id in sorted(self.players.index.items()):
             p = self.players.get(token)
             out.append(dict(p.state.read(row), Id=account_id, Login=token,
                             Guild=guild_names.get(account_id, ""),
                             Sanction=p.state.sanction(now),
-                            Cheat=self._cheat_from(cheats.get(account_id, []))))
+                            Cheat=self._cheat_from(cheats.get(account_id, [])),
+                            SharedIp=shared.get(account_id, [])))
         out.sort(key=lambda a: a["LastSeenOnline"] or "", reverse=True)  # zuletzt online zuerst
         return out
 
@@ -664,6 +666,21 @@ class AdminService:
         self.players.auth.logout(p.name)
         return {"Removed": removed}
 
+    def LinkSteam(self, args):
+        """SteamID (SteamID64) to the account: the player is then logged in
+        directly by the Steam launcher. Ends the running session."""
+        p, _ = self._account(args["accountId"])
+        try:
+            self.players.auth.set_steam(p.name, args.get("steamId", ""))
+        except auth.AuthError as e:
+            msg = str(e)
+            if msg.startswith("steam_taken:"):
+                raise AdminError(409, "SteamID already linked to %s (unlink it there first)"
+                                 % msg.split(":", 1)[1])
+            raise AdminError(400, "Not a SteamID64 (17 digits, starts with 7656119)")
+        self.players.auth.logout(p.name)
+        return {"SteamId": self.players.auth.steam_id(p.name)}
+
     def SetAdmin(self, args):
         """Webtool-Zugang (admin true/false); verlangt ein Passwort."""
         p, _ = self._account(args["accountId"])
@@ -672,6 +689,54 @@ class AdminService:
         except auth.AuthError:
             raise AdminError(400, "Player has no password yet")
         return {"Admin": self.players.auth.is_admin(p.name)}
+
+    def SetDisplayName(self, args):
+        """Fix a player's castle/character name (same rule as the client's
+        name choice: 3-16 printable ASCII, no spaces or "@", unique). Takes
+        effect at once; the player sees it after restarting the client."""
+        import re  # noqa: PLC0415
+        p, a = self._account(args["accountId"])
+        name = str(args.get("displayName") or "").strip()
+        if not re.fullmatch(r"[\x21-\x3f\x41-\x7e]{3,16}", name):
+            raise AdminError(400, "3-16 characters, no spaces or @")
+        folded = name.casefold()
+        for other_id in self.players.index.values():
+            if other_id == a["AccountId"]:
+                continue
+            o = self.players.by_account_id(other_id)
+            if o and (o.state.snapshot().get("DisplayName") or "").casefold() == folded:
+                raise AdminError(409, "Name already used by account %s" % other_id)
+        old = a.get("DisplayName") or ""
+        p.state.choose_display_name(name)
+        # friend lists keep a copy of the name: update every account
+        for other_id in list(self.players.index.values()):
+            if other_id != a["AccountId"]:
+                o = self.players.by_account_id(other_id)
+                if o is not None:
+                    o.state.rename_friend(a["AccountId"], name)
+        if args.get("logout", True):
+            self.players.auth.logout(p.name)
+        return {"DisplayName": name, "Old": old}
+
+    def ClearEconomyRecords(self, args):
+        """Remove a player's purchases (tracking: Blings, Pack, Shop) and
+        bling ledger (economy stats), e.g. a test account."""
+        p, _ = self._account(args["accountId"])
+        removed = self.players.tracker.remove(p.account_id, set(self.PURCHASE_TAGS))
+        lines = 0
+        try:
+            with open(p.state.ledger, encoding="utf-8") as f:
+                lines = sum(1 for _ in f)
+            open(p.state.ledger, "w", encoding="utf-8").close()
+        except OSError:
+            pass
+        return {"Purchases": removed, "LedgerEntries": lines}
+
+    def ClearDefendLog(self, args):
+        """Empty a player's battle log (defend log), e.g. entries of players
+        that no longer exist; the game shows it after the next reload."""
+        p, _ = self._account(args["accountId"])
+        return {"Removed": p.state.clear_defend_log()}
 
     def Logout(self, args):
         """Sitzung beenden: das laufende Spiel fliegt beim nächsten Request
@@ -699,6 +764,47 @@ class AdminService:
                 if not auth_.is_admin(name):
                     kicked += auth_.logout(name)
         return {"Maintenance": on, "Sessions": kicked}
+
+    notice = None  # ingame_market.Notice, gesetzt von game_server
+
+    market = None  # ingame_market.Market, gesetzt von game_server
+    iplog = None  # iplog.IpLog, gesetzt von game_server
+
+    def GetAccountIps(self, args):
+        """IPs of a player, with the other accounts seen on each."""
+        aid = int(args["accountId"])
+        rows = self.iplog.account_ips(aid)
+        for r in rows:
+            r["Others"] = [{"Id": o, "Name": self._member_name(o)[0]} for o in r["Others"]]
+        return {"Ips": rows}
+
+    def GetIpWhitelist(self, args):
+        return {"Whitelist": list(self.iplog.db["Whitelist"]),
+                "Refused": list(reversed(self.iplog.db["Refused"][-50:]))}
+
+    def SetIpWhitelist(self, args):
+        try:
+            return {"Whitelist": self.iplog.set_whitelist(args.get("ips") or [])}
+        except ValueError as e:
+            raise AdminError(400, str(e))
+
+    def GetMarket(self, args):
+        """Ingame Market: open offers, collect boxes, log (newest first)."""
+        return self.market.admin_view(int(args.get("limit") or 300))
+
+    def GetNotice(self, args):
+        return {"Notice": self.notice.get() if self.notice else {}}
+
+    def ScheduleUpdate(self, args):
+        """Update countdown in every game (bottom right, the player's local
+        time); at 0 the game closes itself and all sessions end."""
+        minutes = float(args.get("minutes") or 0)
+        if not 1 <= minutes <= 24 * 60:
+            raise AdminError(400, "Minutes: 1 to 1440")
+        return {"Notice": self.notice.schedule(minutes, str(args.get("message") or "").strip()[:200])}
+
+    def CancelUpdate(self, args):
+        return {"Notice": self.notice.cancel()}
 
     def GetNews(self, args):
         return {"News": self.news.all()}

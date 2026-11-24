@@ -21,6 +21,28 @@ import special_packs
 
 PACKS = [500, 1000, 2500, 5000, 10000]
 
+# All Heroes Pack: kein SpecialPack, schaltet die fehlenden Helden frei
+# (account_state.buy_hero_pack); Preis je Spieler aus balance.hero_pack_price
+HERO_PACK_ID = 900
+HERO_NAMES = {2: "Knight", 3: "Archer", 4: "Mage", 5: "Runaway"}
+
+
+def hero_pack(missing):
+    """(Preis, Text) des All Heroes Pack für missing [(Spec, Blings)]; None,
+    wenn nicht im Angebot (auch vor der Wahl des Gratis-Helden im Tutorial)."""
+    if len(missing) >= len(HERO_NAMES):
+        return None
+    price = balance.hero_pack_price([b for _, b in missing])
+    if not price:
+        return None
+    names = [HERO_NAMES.get(s, "Hero %d" % s) for s, _ in missing]
+    full = sum(b for _, b in missing)
+    text = ("Unlocks every hero you don't own yet: %s. One by one: %s blings, "
+            "you save %s." % (", ".join(names[:-1]) + " and " + names[-1],
+                              fmt(full), fmt(full - price)))
+    return price, text
+
+
 # Saison-Packs (SpecialPackSettings), nur während ihres Events
 # (patcher.seasonal_event) im Angebot
 EVENT_PACKS = {"Halloween": (67, "Halloween Pack")}
@@ -121,24 +143,34 @@ def fmt(n):
     return "{:,}".format(n)
 
 
-def catalog_page(display_name, token, blings, owned, event, message=""):
-    """Bling-Shop der Bling-Wirtschaft: Packs gegen erspielte Blings."""
+def _buy_action(token, pid, price, blings):
+    if blings < price:
+        return '<span class="short">%s more blings needed</span>' % fmt(price - blings)
+    # Rückfrage in der Karte: confirm() öffnete im Client ein Windows-Fenster
+    # außerhalb des Spiels
+    return ('<a class="buy" href="#" onclick="return ask(this)">Buy</a>'
+            '<span class="ask">Buy for %s? <a class="buy" '
+            'href="/blings/buy_pack?t=%s&amp;id=%d">Yes</a> '
+            '<a class="no" href="#" onclick="return ask(this)">No</a></span>'
+            % (fmt(price), html.escape(token), pid))
+
+
+def catalog_page(display_name, token, blings, owned, event, message="", heroes=None):
+    """Bling-Shop der Bling-Wirtschaft: Packs gegen erspielte Blings;
+    heroes = hero_pack(...) (All Heroes Pack) oder None."""
     cards = []
+    if heroes:
+        price, text = heroes
+        cards.append(("Heroes", '<div class="card"><h2>All Heroes Pack'
+                      '<span class="badge">Save</span></h2><p class="desc">%s</p><ul>'
+                      '<li>Heroes start at level 1 (a trial hero keeps its level and gear)</li>'
+                      '</ul><div class="foot"><span class="price">%s</span>%s</div></div>'
+                      % (html.escape(text), fmt(price),
+                         _buy_action(token, HERO_PACK_ID, price, blings))))
     for pid, price in offers(event):
         pack = special_packs.pack(pid)
         items = "".join("<li>%s</li>" % html.escape(x) for x in _contents(pack))
-        if pid in owned:
-            action = ""
-        elif blings < price:
-            action = '<span class="short">%s more blings needed</span>' % fmt(price - blings)
-        else:
-            # Rückfrage in der Karte: confirm() öffnete im Client ein
-            # Windows-Fenster außerhalb des Spiels
-            action = ('<a class="buy" href="#" onclick="return ask(this)">Buy</a>'
-                      '<span class="ask">Buy for %s? <a class="buy" '
-                      'href="/blings/buy_pack?t=%s&amp;id=%d">Yes</a> '
-                      '<a class="no" href="#" onclick="return ask(this)">No</a></span>'
-                      % (fmt(price), html.escape(token), pid))
+        action = "" if pid in owned else _buy_action(token, pid, price, blings)
         badge = '<span class="badge">Event</span>' if pid == EVENT_PACKS.get(event, (0,))[0] else ""
         tab, name, desc = _entry(pack)
         if pid in owned:

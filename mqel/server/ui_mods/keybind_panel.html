@@ -1,0 +1,267 @@
+<!-- MQEL Setting Mod panel, before 2026-11-24 "KEYS" (ui_patches.py, patch 12; key binds,
+     WASD movement, loot filter for the hero: loot_filter.py, docs/96-loot-filter.md). Talks to the WASD helper
+     (GameData\Bin\mqelwasd9_1.dll, before 2026-11-21 xinput9_1_0.dll) on http://127.0.0.1:27631. ES5 only:
+     the game's embedded Chromium is old. -->
+<style>
+#mqel-kb-panel{display:none;position:fixed;left:50%;top:140px;width:720px;margin-left:-360px;z-index:2147481000;background:#0b3b52;border:3px solid #0a2633;border-radius:10px;box-shadow:0 0 25px #000;color:#fff;font-size:14px;padding:16px 22px 18px}
+#mqel-kb-panel.open{display:block}
+#mqel-kb-panel h2{margin:0 0 6px;text-align:center;color:#fff;font-size:30px;letter-spacing:1px;text-transform:uppercase}
+#mqel-kb-panel h3{margin:14px 0 6px;color:#f6c344;font-size:16px}
+#mqel-kb-panel .mqel-kb-note{color:#a9c7d4;font-size:12px;margin:2px 0 6px}
+#mqel-kb-panel .mqel-kb-warn{color:#ffb44a;font-size:13px;margin:6px 0}
+#mqel-kb-panel .mqel-kb-ok{color:#8fe36b;font-size:13px;margin:6px 0}
+#mqel-kb-panel .mqel-kb-diag{color:#7fa7b8;font-size:11px;margin-top:8px}
+#mqel-kb-panel .mqel-kb-err{color:#ff6f6f;font-size:13px;margin:6px 0}
+#mqel-kb-panel .mqel-kb-scroll{max-height:260px;overflow-y:auto;border:1px solid #0a2633;border-radius:6px;padding:4px 8px;background:#093246}
+#mqel-kb-panel table{width:100%;border-collapse:collapse}
+#mqel-kb-panel td{padding:3px 4px;border-bottom:1px solid #0c4560}
+#mqel-kb-panel td.mqel-kb-name{width:46%}
+#mqel-kb-panel .mqel-kb-key{display:inline-block;min-width:92px;padding:3px 8px;margin-right:4px;background:#14607f;border:1px solid #2a89ad;border-radius:5px;color:#fff;cursor:pointer;text-align:center}
+#mqel-kb-panel .mqel-kb-key:hover{background:#1b7aa1}
+#mqel-kb-panel .mqel-kb-key.wait{background:#f6c344;color:#08202c;border-color:#fff}
+#mqel-kb-panel .mqel-kb-key.empty{color:#7fa7b8}
+#mqel-kb-panel .mqel-kb-x{color:#ff8b8b;cursor:pointer;margin-right:10px;font-weight:bold}
+#mqel-kb-panel .mqel-kb-mouse{color:#a9c7d4;font-size:12px}
+#mqel-kb-panel .mqel-kb-move td{border:0}
+#mqel-kb-panel label{cursor:pointer}
+#mqel-kb-panel .mqel-kb-buttons{margin-top:14px;text-align:right}
+#mqel-kb-panel .mqel-kb-btn{display:inline-block;margin-left:8px;padding:6px 16px;border-radius:5px;background:#5b8ea3;color:#fff;cursor:pointer;text-transform:uppercase;font-weight:bold}
+#mqel-kb-panel .mqel-kb-btn:hover{background:#6fa6bd}
+#mqel-kb-panel .mqel-kb-btn.primary{background:#f6c344;color:#08202c}
+#mqel-kb-panel .mqel-kb-btn.primary:hover{background:#ffd666}
+#mqel-mod-buttons{position:relative;display:block;width:88px;height:48px;margin-right:4px}
+#mqel-kb-button{position:relative;display:block;width:88px;height:48px;cursor:pointer}
+#mqel-kb-button span{position:absolute;left:3px;top:4px;width:80px;height:34px;box-sizing:border-box;padding-top:3px;border:2px solid #0a2633;border-radius:6px;background:#14607f;box-shadow:inset 0 -4px 0 #0c4560;color:#f6c344;font-size:12px;font-weight:bold;line-height:13px;text-align:center;letter-spacing:.5px}
+#mqel-kb-button:hover span{background:#1b7aa1}
+</style>
+<div id="mqel-kb-panel">
+  <h2>Setting Mod</h2>
+  <div id="mqel-kb-status" class="mqel-kb-note"></div>
+  <div id="mqel-kb-body"></div>
+  <div id="mqel-kb-diag" class="mqel-kb-diag"></div>
+  <div class="mqel-kb-buttons">
+    <a class="mqel-kb-btn" id="mqel-kb-discard">Discard changes</a>
+    <a class="mqel-kb-btn primary" id="mqel-kb-save">Save key binds</a>
+    <a class="mqel-kb-btn" id="mqel-kb-close">Close</a>
+  </div>
+</div>
+<script type="text/javascript">
+(function(){
+var API="http://127.0.0.1:27631";
+var HID={65:4,66:5,67:6,68:7,69:8,70:9,71:10,72:11,73:12,74:13,75:14,76:15,77:16,78:17,79:18,80:19,81:20,82:21,83:22,84:23,85:24,86:25,87:26,88:27,89:28,90:29,
+49:30,50:31,51:32,52:33,53:34,54:35,55:36,56:37,57:38,48:39,13:40,27:41,8:42,9:43,32:44,189:45,187:46,219:47,221:48,220:49,186:51,222:52,192:53,188:54,190:55,191:56,20:57,
+112:58,113:59,114:60,115:61,116:62,117:63,118:64,119:65,120:66,121:67,122:68,123:69,44:70,145:71,19:72,45:73,36:74,33:75,46:76,35:77,34:78,39:79,37:80,40:81,38:82,
+144:83,111:84,106:85,109:86,107:87,97:89,98:90,99:91,100:92,101:93,102:94,103:95,104:96,105:97,96:98,110:99,17:224,16:225,18:226};
+var VKNAME={13:"Enter",27:"Esc",8:"Backspace",9:"Tab",32:"Space",189:"-",187:"=",219:"[",221:"]",220:"\\",186:";",222:"'",192:"`",188:",",190:".",191:"/",20:"Caps Lock",
+44:"Print",145:"Scroll Lock",19:"Pause",45:"Insert",36:"Home",33:"Page Up",46:"Delete",35:"End",34:"Page Down",39:"Right",37:"Left",40:"Down",38:"Up",144:"Num Lock",
+111:"Num /",106:"Num *",109:"Num -",107:"Num +",110:"Num .",17:"Ctrl",16:"Shift",18:"Alt"};
+var HIDNAME={};
+(function(){var vk,n;for(vk in HID){vk=+vk;n=VKNAME[vk];if(!n){if(vk>=65&&vk<=90||vk>=48&&vk<=57)n=String.fromCharCode(vk);else if(vk>=112&&vk<=123)n="F"+(vk-111);else if(vk>=96&&vk<=105)n="Num "+(vk-96);}HIDNAME[HID[vk]]=n||("Key "+HID[vk]);}
+HIDNAME[228]="Right Ctrl";HIDNAME[230]="Right Alt";HIDNAME[239]="Right Shift";HIDNAME[227]="Win";HIDNAME[231]="Right Win";})();
+function vkName(vk){if(VKNAME[vk])return VKNAME[vk];if(vk>=65&&vk<=90||vk>=48&&vk<=57)return String.fromCharCode(vk);if(vk>=112&&vk<=123)return "F"+(vk-111);if(vk>=96&&vk<=105)return "Num "+(vk-96);return "Key "+vk;}
+var MOD={1:"Ctrl",2:"Shift",4:"Alt"};
+function comboName(e){var s="",m;for(m=1;m<=4;m*=2)if(e.RequiredModifiers&m)s+=MOD[m]+"+";return s+(HIDNAME[e.Key]||("Key "+e.Key));}
+var ACTIONS=[
+["Movement / combat",[["DirectedAbility","Hold the ground (attack in place)"],["MoveWithoutAttacking","Move without attacking"],["CancelAttack","Cancel attack"],["LockTarget","Lock target"],["OrbitGameCameraLeft","Rotate camera left"],["OrbitGameCameraRight","Rotate camera right"]]],
+["Abilities",[["Ability1","Ability 1"],["Ability2","Ability 2"],["Ability3","Ability 3"],["Ability4","Ability 4 (right mouse)"],["Ability5","Ability 5 (Q slot)"],["Ability6","Ability 6"],["Ability7","Ability 7"],["Ability8","Ability 8"]]],
+["Emotes",[["Emote1","Emote 1"],["Emote2","Emote 2"],["Emote3","Emote 3"],["Emote4","Emote 4"],["Emote5","Emote 5"],["Emote6","Emote 6"],["Emote7","Emote 7"],["Emote8","Emote 8"]]],
+["Castle building",[["ToggleEditionMode","Toggle edit mode"],["BuildAction1","Build action 1"],["BuildAction2","Build action 2"],["BuildAction3","Build action 3"],["BuildAction4","Build action 4"],["BuildAction5","Build action 5"],["BuildEntityTweakingTool","Fine placement tool"],["BuildingShortcutCorneliusEmporium","Open Cornelius' Emporium"],["BuildingShortcutPotionBrewery","Open Potion Brewery"],["BuildingShortcutBlackSmith","Open Blacksmith"],["BuildingShortcutCreatureHatchery","Open Creature Hatchery"],["BuildingShortcutCreatureMutator","Open Creature Mutator"],["BuildingShortcutArchitectOffice","Open Architect's Office"],["BuildingShortcutHeroTrainer","Open Hero Trainer"]]],
+["Other",[["Exit","Exit / close menu"],["ToggleVideoCapture","Toggle video capture"]]]];
+var MOVE=[["up","Move up"],["left","Move left"],["down","Move down"],["right","Move right"]];
+var state=null,binds=null,dirty=false,capture=null,msg="",msgClass="mqel-kb-note",open=false;
+
+function api(method,path,body,done){
+  var x=new XMLHttpRequest(),fin=false,t;
+  function end(ok,txt){if(fin)return;fin=true;clearTimeout(t);done(ok,txt);}
+  t=setTimeout(function(){try{x.abort();}catch(e){}end(false,"");},5000);
+  x.onreadystatechange=function(){if(x.readyState==4)end(x.status>=200&&x.status<300,x.responseText);};
+  try{x.open(method,API+path,true);if(body!=null)x.setRequestHeader("Content-Type","text/plain");x.send(body);}catch(e){end(false,"");}
+}
+function $id(i){return document.getElementById(i);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function setMsg(t,c){msg=t;msgClass=c||"mqel-kb-note";}
+
+function keyEntries(a){var s=binds&&binds[a];return s&&s.KeyboardShortcuts?s.KeyboardShortcuts:[];}
+function conflicts(){
+  var out=[],i,a,g,j,k,e,hid;
+  if(!state||!state.enabled||!binds)return out;
+  for(i=0;i<MOVE.length;i++){hid=HID[state[MOVE[i][0]]];if(!hid)continue;
+    for(a in binds){k=keyEntries(a);for(j=0;j<k.length;j++){e=k[j];if(e.Key==hid&&!e.RequiredModifiers)out.push(vkName(state[MOVE[i][0]])+" is also \""+label(a)+"\"");}}}
+  return out;
+}
+function label(a){var g,i;for(g=0;g<ACTIONS.length;g++)for(i=0;i<ACTIONS[g][1].length;i++)if(ACTIONS[g][1][i][0]==a)return ACTIONS[g][1][i][1];return a;}
+function entry(key,mods,like){
+  var ign=like?like.IgnoredModifiers:2;ign=ign&~mods;
+  return {"Key":key,"CanStillBeTriggeredWithShiftPressedA":like?!!like.CanStillBeTriggeredWithShiftPressedA:false,"IgnoredModifiers":ign,"IsGrabbable":true,"RequiredModifiers":mods};
+}
+function ensure(a){if(!binds[a])binds[a]={"ControllerShortcuts":[],"KeyboardShortcuts":[],"MouseShortcuts":[]};if(!binds[a].KeyboardShortcuts)binds[a].KeyboardShortcuts=[];return binds[a];}
+function removeKey(hid,except){var a,k,j;for(a in binds){if(a==except)continue;k=keyEntries(a);for(j=k.length-1;j>=0;j--)if(k[j].Key==hid&&!k[j].RequiredModifiers)k.splice(j,1);}}
+function wasdPreset(){
+  /* move keys free; camera on Q/E + arrows; Ability5 on R */
+  var i;for(i=0;i<MOVE.length;i++)if(HID[state[MOVE[i][0]]])removeKey(HID[state[MOVE[i][0]]]);
+  removeKey(20);removeKey(8);removeKey(21);removeKey(80);removeKey(79);
+  ensure("OrbitGameCameraLeft").KeyboardShortcuts=[entry(80,0),entry(20,0)];
+  ensure("OrbitGameCameraRight").KeyboardShortcuts=[entry(79,0),entry(8,0)];
+  ensure("Ability5").KeyboardShortcuts=[entry(21,0)];
+  dirty=true;setMsg("WASD layout applied: camera on Q/E and arrow keys, Ability 5 on R. Press \"Save key binds\".","mqel-kb-ok");render();
+}
+
+function render(){
+  var h="",g,i,a,k,j,m,c,s;
+  if(!state){
+    h+="<div class='mqel-kb-err'>The WASD helper is not running. Restart the launcher so it updates the game (it puts mqelwasd9_1.dll into GameData\\Bin next to MightyQuest.exe), then restart the game.</div>";
+    $id("mqel-kb-body").innerHTML=h;$id("mqel-kb-status").innerHTML="";return;
+  }
+  $id("mqel-kb-status").innerHTML=esc("Movement keys and the loot filter change right away. Other key binds are written to CustomUserSettings.json and take effect the next time you start the game.");
+  h+="<h3>Loot pick-up by Player</h3>";
+  if(state.lootFilter)
+    h+="<label><input type='checkbox' id='mqel-kb-lootplayer' "+(state.lootPlayer?"checked='checked'":"")+"/> Apply the pet's loot filter to my hero too</label>"+
+       "<div class='mqel-kb-note'>Uses your choice under Settings &gt; Gameplay &gt; Loot pick-up by Pet. Equipment and weapons below that quality stay on the ground "+
+       "for your hero and your pet. Currencies, crafting materials, potions and orbs are always picked up. \"Pick-up everything\" filters nothing.</div>";
+  else h+="<div class='mqel-kb-warn'>Restart the launcher once so it updates the game, then this option appears.</div>";
+  h+="<h3>WASD movement</h3><label><input type='checkbox' id='mqel-kb-enabled' "+(state.enabled?"checked='checked'":"")+"/> Move the hero with the keyboard</label>";
+  h+="<table class='mqel-kb-move'><tr>";
+  for(i=0;i<MOVE.length;i++){m=MOVE[i];c=capture&&capture.move==m[0];
+    h+="<td>"+m[1]+"<br/><span class='mqel-kb-key"+(c?" wait":"")+"' data-move='"+m[0]+"'>"+(c?"Press a key...":esc(vkName(state[m[0]])))+"</span></td>";}
+  h+="</tr></table>";
+  h+="<div style='margin-top:6px'>Method: <label><input type='radio' name='mqel-kb-mode' value='1' "+(state.mode!=2?"checked='checked'":"")+"/> Virtual cursor (your cursor stays put)</label> &nbsp; "+
+     "<label><input type='radio' name='mqel-kb-mode' value='2' "+(state.mode==2?"checked='checked'":"")+"/> Real cursor</label></div>";
+  h+="<div>Click distance from the hero: <input type='range' id='mqel-kb-radius' min='4' max='40' value='"+(state.radius||10)+"' style='vertical-align:middle;width:180px'/> <span id='mqel-kb-radius-val'>"+(state.radius||10)+"%</span>"+
+     " <span class='mqel-kb-note'>(lower = shorter steps)</span></div>";
+  h+="<div><label><input type='checkbox' id='mqel-kb-attackonly' "+(state.attackOnly!==false?"checked='checked'":"")+"/> Only during attacks</label>"+
+     " <span class='mqel-kb-note'>(now: "+(state.inAttack?"in an attack":"not in an attack")+")</span></div>";
+  c=conflicts();
+  if(c.length)h+="<div class='mqel-kb-warn'>Conflict: "+esc(c.join("; "))+". <a class='mqel-kb-btn' id='mqel-kb-preset'>Use WASD layout</a></div>";
+  if(state.pendingBinds&&!dirty)h+="<div class='mqel-kb-ok'>Saved key binds are waiting for the next game start.</div>";
+  if(msg)h+="<div class='"+msgClass+"'>"+esc(msg)+"</div>";
+  h+="<h3>Game key binds</h3><div class='mqel-kb-note'>Click a key to change it (hold Ctrl, Shift or Alt for a combination, Esc cancels). Click &times; to remove it.</div><div class='mqel-kb-scroll'>";
+  if(!binds)h+="<div class='mqel-kb-err'>Could not read CustomUserSettings.json.</div>";
+  else for(g=0;g<ACTIONS.length;g++){
+    h+="<h3>"+esc(ACTIONS[g][0])+"</h3><table>";
+    for(i=0;i<ACTIONS[g][1].length;i++){a=ACTIONS[g][1][i];if(!binds[a[0]]&&a[0].indexOf("BuildingShortcut")==0)continue;
+      k=keyEntries(a[0]);h+="<tr><td class='mqel-kb-name'>"+esc(a[1])+"</td><td>";
+      for(j=0;j<2;j++){c=capture&&capture.action==a[0]&&capture.slot==j;
+        if(k[j])h+="<span class='mqel-kb-key"+(c?" wait":"")+"' data-action='"+a[0]+"' data-slot='"+j+"'>"+(c?"Press a key...":esc(comboName(k[j])))+"</span><span class='mqel-kb-x' data-clear='"+a[0]+"' data-slot='"+j+"'>&times;</span>";
+        else if(j==k.length)h+="<span class='mqel-kb-key empty"+(c?" wait":"")+"' data-action='"+a[0]+"' data-slot='"+j+"'>"+(c?"Press a key...":"+ add")+"</span>";}
+      s=binds[a[0]]&&binds[a[0]].MouseShortcuts;
+      if(s&&s.length)h+="<span class='mqel-kb-mouse'>(Mouse "+(s[0].MouseButton+1)+")</span>";
+      h+="</td></tr>";}
+    h+="</table>";}
+  h+="</div>";
+  $id("mqel-kb-body").innerHTML=h;
+}
+
+function load(retry,intro){
+  setMsg("");dirty=false;capture=null;state=null;binds=null;
+  $id("mqel-kb-body").innerHTML="<div class='mqel-kb-note'>Connecting to the WASD helper...</div>";
+  api("GET","/state",null,function(ok,t){
+    if(!ok){if(!retry){setTimeout(function(){load(true,intro);},700);return;}render();return;}
+    try{state=JSON.parse(t);}catch(e){state=null;}
+    if(!intro&&state&&!state.enabled&&!state.layoutApplied)
+      setMsg("WASD movement is off: your keys stay the game's own (potion on Q, camera on W/E). Tick \"Move the hero with the keyboard\" to switch it on, then restart the game once: the camera moves to Q/E and Ability 5 to R.","mqel-kb-ok");
+    if(intro&&state){
+      setMsg("New: WASD movement. During attacks W A S D move your hero; your mouse and clicks still aim and attack. "+
+             (state.layoutApplied?"Your keys are set up for it: the camera rotates with Q/E (and the arrow keys), Ability 5 is on R. Change anything below.":
+             "If W, A or D still rotate the camera, click \"Use WASD layout\", then \"Save key binds\" and restart the game once."),"mqel-kb-ok");
+      state.layoutOffered=true;
+    }
+    api("GET","/binds",null,function(ok2,t2){if(ok2){try{binds=JSON.parse(t2);}catch(e){binds=null;}}render();diag();if(intro&&state)sendConfig();});
+  });
+}
+function diag(){
+  api("GET","/debug",null,function(ok,t){
+    var d,el=$id("mqel-kb-diag");if(!el)return;
+    if(!ok){el.innerHTML="";return;}
+    try{d=JSON.parse(t);}catch(e){return;}
+    if(d.version!=2){el.innerHTML=esc("Old WASD helper: restart the launcher to update the game.");return;}
+    el.innerHTML=esc("Diagnostics: polls "+d.polls+", key frames "+d.keyFrames+", moved "+d.movedFrames+", presses "+d.presses+
+      ", blocked: not in attack "+d.blockedAttack+", focus "+d.blockedFocus+", typing "+d.blockedTyping+", Alt "+d.blockedAlt+
+      " | hooks "+d.hooksInstalled+" (cursor "+d.hookCursor+", key state "+d.hookKeyState+"/"+d.hookKeyboardState+"), attack msgs "+d.attackMsgs);
+  });
+}
+function sendConfig(){
+  api("POST","/config","enabled="+(state.enabled?1:0)+"&up="+state.up+"&left="+state.left+"&down="+state.down+"&right="+state.right+
+    "&mode="+(state.mode==2?2:1)+"&attackonly="+(state.attackOnly===false?0:1)+"&radius="+(state.radius||10)+"&layoutoffered="+(state.layoutOffered?1:0)+"&lootplayer="+(state.lootPlayer?1:0),function(ok,t){
+    if(ok){try{var p=JSON.parse(t);state.pendingBinds=p.pendingBinds;}catch(e){}}else setMsg("The WASD helper did not answer.","mqel-kb-err");render();});
+}
+function typing(on){api("POST","/typing",on?"1":"0",function(){});}
+
+function onKey(ev){
+  if(!open||!capture)return;
+  ev.preventDefault();ev.stopPropagation();
+  var vk=ev.keyCode,mods=0,hid,k,like;
+  if(vk==27){capture=null;render();return;}
+  if(capture.move){
+    if(vk==16||vk==17||vk==18){return;}
+    state[capture.move]=vk;capture=null;sendConfig();return;
+  }
+  if(vk!=17&&ev.ctrlKey)mods|=1;if(vk!=16&&ev.shiftKey)mods|=2;if(vk!=18&&ev.altKey)mods|=4;
+  hid=HID[vk];if(!hid){setMsg("That key can't be used.","mqel-kb-err");capture=null;render();return;}
+  k=ensure(capture.action).KeyboardShortcuts;like=k[capture.slot]||k[0];
+  k[capture.slot]=entry(hid,mods,like);
+  dirty=true;setMsg("Not saved yet.","mqel-kb-warn");capture=null;render();
+}
+function onClick(ev){
+  var t=ev.target,a,j;
+  if(!t||!t.getAttribute)return;
+  if(t.id=="mqel-kb-close"){hide();return;}
+  if(t.id=="mqel-kb-preset"){wasdPreset();return;}
+  if(t.id=="mqel-kb-enabled"){state.enabled=!!t.checked;sendConfig();return;}
+  if(t.id=="mqel-kb-attackonly"){state.attackOnly=!!t.checked;sendConfig();return;}
+  if(t.id=="mqel-kb-lootplayer"){state.lootPlayer=!!t.checked;sendConfig();return;}
+  if(t.name=="mqel-kb-mode"){state.mode=+t.value;sendConfig();return;}
+  if(t.id=="mqel-kb-save"){
+    if(!binds){return;}
+    api("POST","/binds",JSON.stringify(binds,null,4),function(ok,r){
+      if(ok){dirty=false;try{state.pendingBinds=JSON.parse(r).pendingBinds;}catch(e){}setMsg("Saved. These key binds take effect the next time you start the game.","mqel-kb-ok");}
+      else setMsg("Saving failed (is the WASD helper installed?).","mqel-kb-err");render();});
+    return;}
+  if(t.id=="mqel-kb-discard"){api("POST","/binds/discard","",function(){load();});return;}
+  if(t.getAttribute("data-move")){capture={move:t.getAttribute("data-move")};render();return;}
+  a=t.getAttribute("data-action");
+  if(a){capture={action:a,slot:+t.getAttribute("data-slot")};render();return;}
+  a=t.getAttribute("data-clear");
+  if(a){j=+t.getAttribute("data-slot");keyEntries(a).splice(j,1);dirty=true;setMsg("Not saved yet.","mqel-kb-warn");render();}
+}
+/* attack start/end -> DLL (movement only runs during attacks) */
+function attack(on){api("POST","/attack",on?"1":"0",function(){});}
+function bindAttackEvents(tries){
+  var ec=window.hyperquest&&hyperquest.eventController,n,on=["startAttackEvent","attackLoadedEvent"],
+      off=["showAttackReportEvent","serverEndAttackEndedEvent","closeAttackReportEvent"],ok=0;
+  function b(name,val){if(ec&&ec[name]&&ec[name].bind){ec[name].bind(function(){attack(val);},window);ok++;}}
+  for(n=0;n<on.length;n++)b(on[n],true);
+  for(n=0;n<off.length;n++)b(off[n],false);
+  if(!ok&&tries<60)setTimeout(function(){bindAttackEvents(tries+1);},1000);
+}
+function show(intro){open=true;$id("mqel-kb-panel").className="open";typing(true);load(false,intro);}
+/* first lobby visit with the WASD helper installed: show the panel once */
+function firstRun(){
+  api("GET","/state",null,function(ok,t){
+    var st;if(!ok||open)return;
+    try{st=JSON.parse(t);}catch(e){return;}
+    /* 2026-11-23: new players start with WASD off (game keys: potion on
+       Q, camera on W/E): no pop-up for them, KEYS still opens the panel */
+    if(st.layoutOffered||!st.enabled)return;
+    show(true);
+  });
+}
+function hide(){open=false;capture=null;$id("mqel-kb-panel").className="";typing(false);}
+
+function init(){
+  var p=$id("mqel-kb-panel"),b=$id("mqel-kb-button");
+  if(!p||p.getAttribute("data-ready"))return;p.setAttribute("data-ready","1");
+  p.addEventListener("click",onClick,false);
+  p.addEventListener("change",function(ev){var t=ev.target;if(t&&t.id=="mqel-kb-radius"){state.radius=+t.value;sendConfig();}},false);
+  p.addEventListener("input",function(ev){var t=ev.target,v=$id("mqel-kb-radius-val");if(t&&t.id=="mqel-kb-radius"&&v)v.innerHTML=t.value+"%";},false);
+  document.addEventListener("keydown",onKey,true);
+  if(b)b.addEventListener("click",function(ev){ev.preventDefault();if(open)hide();else show();},false);
+  bindAttackEvents(0);
+  attack(false); /* a (re)loaded lobby UI: not in an attack */
+  setTimeout(firstRun,4000);
+  /* chat and other text fields: don't move the hero while typing */
+  document.addEventListener("focus",function(ev){var n=ev.target&&ev.target.tagName;if(!open&&(n=="INPUT"&&ev.target.type!="checkbox"&&ev.target.type!="radio"||n=="TEXTAREA"))typing(true);},true);
+  document.addEventListener("blur",function(ev){var n=ev.target&&ev.target.tagName;if(!open&&(n=="INPUT"&&ev.target.type!="checkbox"&&ev.target.type!="radio"||n=="TEXTAREA"))typing(false);},true);
+}
+if(document.readyState=="loading")document.addEventListener("DOMContentLoaded",init,false);else init();
+})();
+</script>

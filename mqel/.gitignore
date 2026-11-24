@@ -35,3 +35,22 @@ start.bat
 *.key
 .env
 *.db
+
+# Local server settings with the Steam Web API key
+server_config.bat
+player-pack/
+player-pack.zip
+
+# Cornelius voice clips cut from the game audio (Ubisoft), local only
+server/data/voices/
+
+# DaVinci Resolve MCP server environment (tools/resolve_mcp/README.md)
+tools/resolve_mcp/.venv/
+
+# Ubisoft game files a server owner copies from their own install (never commit)
+server/data/oasis/*.json
+server/data/steam/Data/
+website/media/
+launcher-mockups/
+_temp60/
+*.log

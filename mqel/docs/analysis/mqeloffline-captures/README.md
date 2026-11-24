@@ -1,20 +1,20 @@
-# Mitschnitte aus MQELOffline_cpp
+# Captures from MQELOffline_cpp
 
-Quelle: <https://github.com/Hedgehogscience/MQELOffline_cpp> (MIT, Convery /
-Hedgehogscience, 2018), ein früherer C++-Nachbau des Servers gegen denselben
-Client. `captures.json` enthält alle dort im Quelltext eingebetteten
-JSON-Antworten mit Fundstelle. Mehrere sind offensichtlich Mitschnitte des
-Originalservers (MongoDB-ObjectIds und Daten aus Oktober 2016), z. B.
+Source: <https://github.com/Hedgehogscience/MQELOffline_cpp> (MIT, Convery /
+Hedgehogscience, 2018), an earlier C++ re-implementation of the server against
+the same client. `captures.json` contains all JSON responses embedded in its
+source code, with their location. Several are obviously captures from the
+original server (MongoDB ObjectIds and dates from October 2016), e.g.
 `AttackService.cpp:173/177` (EndAttack), `AttackSelectionService.cpp:19`
-(Angriffsauswahl inkl. `BossCastle` und echter Spielerburgen).
+(attack selection incl. `BossCastle` and real player castles).
 
-Daraus belegt (14.10.2026):
-- Antwort-Wrapper mit `Result`, `Notifications`, `GlobalNotifications`.
-- `WalletUpdatedNotification.Amounts` = **Differenzen** je Währung.
-- `NotificationType` als Zahl: ObjectiveCompleted 14, ObjectiveUnlocked 17,
+Proven from this (2026-10-14):
+- Response wrapper with `Result`, `Notifications`, `GlobalNotifications`.
+- `WalletUpdatedNotification.Amounts` = **differences** per currency.
+- `NotificationType` as a number: ObjectiveCompleted 14, ObjectiveUnlocked 17,
   WalletUpdated 24, HeroXpChanged 43, WalletCurrencyCapacityUpdated 47,
   ServerAssignmentActionCompleted 74, CastleBought 86, InboxItemsAdded 111.
-- Beute-Items gingen als `InboxItemsAddedNotification` in einen Posteingang
-  (`InboxHeroEquipmentItem`/`InboxConsumableItem` mit `ObjectId`), nicht
-  direkt ins Inventar.
-- Verschachtelte DTOs ohne `$type` wurden vom Client akzeptiert.
+- Loot items went into an inbox as `InboxItemsAddedNotification`
+  (`InboxHeroEquipmentItem`/`InboxConsumableItem` with `ObjectId`), not
+  directly into the inventory.
+- Nested DTOs without `$type` were accepted by the client.

@@ -27,6 +27,7 @@ import achievements
 import balance
 import castle_sale
 import castles
+import community_events
 import item_drops
 import competitions
 import free_trials
@@ -135,6 +136,9 @@ NO_EXPIRABLE = "000000000000000000000000"  # leere MongoDB-ObjectId
 SOURCE = threading.local()
 
 CURRENCY = {1: "PremiumCash", 2: "InGameCoin", 4: "LifeForce"}
+# Bling-SKUs der vier Helden (Knight, Archer, Mage, Runaway; je 950 Blings,
+# einer ist beim Start gratis): Preise des Helden-Packs (bling_shop)
+HERO_SKUS = {2: "12534", 3: "12535", 4: "12536", 5: "13718"}
 
 
 def _load_json(path):
@@ -217,6 +221,7 @@ class AccountState:
         self.state = state_path
         self.lock = threading.Lock()
         self.pack_events = []  # Meldungen aus Pack-Käufen (take_pack_events)
+        self.market_taken = {}  # SlotIndex -> time the Ingame Market took the item
         self.events = []  # (NotificationType-Name, Felder) aus Commands
         self.overflow = []  # BuyBackAdded für Beute bei vollem Inventar, noch nicht gemeldet
         self.spells_unlocked = []  # durch Levelaufstieg, noch nicht gemeldet
@@ -245,7 +250,8 @@ class AccountState:
                 | self._migrate_last_viewed() | self._init_league()
                 | self._drop_orphan_shields() | self._sync_belts()
                 | self._drop_default_equipment() | self._fix_tracking_intervals()
-                | self._fix_tutorial_level() | self._fix_pack_item_levels()):
+                | self._fix_tutorial_level() | self._fix_pack_item_levels()
+                | self._fix_infinite_rings()):
             self._save()
 
     def fix_tutorial_level(self):
@@ -303,6 +309,28 @@ class AccountState:
             slots[:] = keep
             changed = True
         return changed
+
+    def _fix_infinite_rings(self):
+        """Owned Infinite Pack rings get the lowered effect level
+        (level60.INFINITE_RINGS): inventory, equipment, buyback."""
+        import level60  # noqa: PLC0415
+        fixed = False
+        items = [s["Item"] for s in self._slots()]
+        items += [it for h in self.account.get("Heroes") or []
+                  for it in (h.get("Equipment") or {}).values() if it]
+        items += [b.get("Item") for b in (self.account.get("BuyBack") or {}).get("BuyBackItems") or []
+                  if b.get("Item")]
+        for it in items:
+            rule = level60.INFINITE_RINGS.get(it.get("TemplateId"))
+            if not rule:
+                continue
+            for e in it.get("Effects") or []:
+                if e.get("Id") == rule[0] and e.get("Level") != rule[1]:
+                    e["Level"] = rule[1]
+                    fixed = True
+        if fixed:
+            self.log("    [state] Infinite-Ringe auf die neuen Werte gesetzt")
+        return fixed
 
     def _fix_pack_item_levels(self):
         """Kosmetik (Pets, Kostüme, ...) kam früher auf LevelMax ins Inventar
@@ -503,6 +531,53 @@ class AccountState:
             self._save()
             return "ok"
 
+    def set_country(self, code):
+        """CountryCode auf das Land der Anmelde-IP (geoip); speichert nur bei
+        Änderung."""
+        with self.lock:
+            if self.account.get("CountryCode") == code:
+                return False
+            old = self.account.get("CountryCode")
+            self.account["CountryCode"] = code
+            self.log(f"    [state] Land {old} -> {code}")
+            self._save()
+            return True
+
+    def missing_heroes(self):
+        """[(Helden-Spec, Blings)] der noch nicht (dauerhaft) besessenen
+        Helden mit ihrem Bling-Preis (HERO_SKUS); Probe-Helden zählen als
+        fehlend."""
+        with self.lock:
+            owned = {h["HeroSpecContainerId"] for h in self.account["Heroes"]
+                     if h.get("ExpirationDate") is None}
+            return [(spec, self.data.skus[code]["Price"]["Amount"])
+                    for spec, code in HERO_SKUS.items() if spec not in owned]
+
+    def buy_hero_pack(self, price):
+        """Alle fehlenden Helden für `price` Blings (Bling-Shop, Pack
+        bling_shop.HERO_PACK_ID): "owned" (keiner fehlt), "blings" oder "ok".
+        Meldungen (WalletUpdated, HeroUnlocked) über take_pack_events."""
+        missing = [spec for spec, _ in self.missing_heroes()]
+        with self.lock:
+            if not missing:
+                return "owned"
+            wallet = self.account["Wallet"]
+            if wallet["PremiumCash"] < price:
+                return "blings"
+            wallet["PremiumCash"] -= price
+            self._tag("bling shop", -price)
+            self.pack_events.insert(0, ("WalletUpdated", {"Amounts": [
+                {"$type": T("CurrencyAmount"), "Amount": -price, "CurrencyType": 1}],
+                "UpdateTag": 0}))
+            for spec in missing:
+                hero = self._grant_hero(spec)
+                self.pack_events.append(("HeroUnlocked", {
+                    "Hero": copy.deepcopy(hero), "HeroSpecContainerId": spec}))
+            self.spells_unlocked += self._unlock_spells()
+            self.log(f"    [state] Helden-Pack: {missing} für {price} Blings")
+            self._save()
+            return "ok"
+
     def take_pack_events(self):
         """Meldungen aus Pack-Käufen ([(Typ, Felder)]) für die Notifications."""
         with self.lock:
@@ -580,13 +655,32 @@ class AccountState:
         wählte der Client beim Wechsel in den Angriff Region 9."""
         path = os.path.join(loot.SETTINGS, "GeneralSettings", "AttackAdvisorSettings.json")
         free = [r["AttackRegionId"] for r in _load_json(path)["AttackRegions"]
-                if r.get("IsFriendRegion") or r.get("IsCompetitionRegion")]
+                if r.get("IsFriendRegion") or r.get("IsCompetitionRegion")
+                or r["AttackRegionId"] == 11]  # co-op raids (raids.py): open for everyone
+        all_regions = _load_json(path)["AttackRegions"]
+        ids = {r["AttackRegionId"] for r in all_regions}
+        # Region nach einer abgeschlossenen Bossregion: auch für Regionen,
+        # die erst später dazukamen (Level-60-Update: Region 10 nach Upper
+        # Bestmount, Status 3 = Boss besiegt)
+        bosses = {r["AttackRegionId"] for r in all_regions if r.get("BossCastleId")}
         changed = False
         for owner in [self.account, *self.account["Heroes"]]:
             regions = [r for r in owner.get("AttackRegions") or [] if r["Status"] != 1]
             have = {r["AttackRegionId"] for r in regions}
             regions += [{"$type": T("AccountAttackRegion"), "AttackRegionId": rid,
                          "Status": 2} for rid in free if rid not in have]
+            # co-op raids (11): open but "completed" (3), so the client keeps
+            # the player's story region as the current one (with 2 every
+            # reload and game start opened the co-op raids)
+            for r in regions:
+                if r["AttackRegionId"] == 11 and r["Status"] != 3:
+                    regions = [dict(x, Status=3) if x["AttackRegionId"] == 11 else x for x in regions]
+                    break
+            have = {r["AttackRegionId"] for r in regions}
+            regions += [{"$type": T("AccountAttackRegion"), "AttackRegionId": r["AttackRegionId"] + 1,
+                         "Status": 2} for r in list(regions)
+                        if r["Status"] == 3 and r["AttackRegionId"] in bosses
+                        and r["AttackRegionId"] + 1 in ids and r["AttackRegionId"] + 1 not in have]
             if regions != owner.get("AttackRegions"):
                 owner["AttackRegions"] = regions
                 changed = True
@@ -793,6 +887,154 @@ class AccountState:
             slots = self._add_reward_items(items)
             self._save()
             return self._inventory_events(slots, occupied) + self._take_overflow()
+
+    # -- Ingame Market (ingame_market.py) ---------------------------------
+    # Every method returns the client notifications [(name, fields)] for the
+    # changes; the caller pushes them (wallet changes via notifications.
+    # wallet_updated). Raise ValueError with a player-facing text.
+
+    def market_take_item(self, slot_index):
+        """Equipment item out of an inventory slot (not equipped items):
+        (item, events)."""
+        with self.lock:
+            slot = next((s for s in self._slots() if s["SlotIndex"] == slot_index), None)
+            if slot is None or slot["Item"].get("$type") != T("HeroEquipmentItem"):
+                raise ValueError("That item is no longer in your inventory.")
+            if slot["Item"].get("IsSellable") is False:
+                raise ValueError("This item can't be traded.")
+            self._take_slot(slot_index)
+            self.market_taken[slot_index] = time.time()
+            self._save()
+            self.log(f"    [state] Ingame Market: Template {slot['Item']['TemplateId']} "
+                     f"aus Slot {slot_index}")
+            return copy.deepcopy(slot["Item"]), [("HeroInventoryRemoved", {"SlotIndex": slot_index})]
+
+    def sort_inventory_tab(self, tab, key):
+        """Sort the items of inventory tab `tab` (0-based, 21 slots each)
+        with `key(slot)` and pack them from the tab's first slot (2026-11-23,
+        inventory sort in the lobby, ui_mods/lobby_mods.html). Only this
+        tab moves; the game reloads the account (FORCE_RELOAD) to show it.
+        Returns events."""
+        with self.lock:
+            tabs = self.account["Inventory"].get("InventoryTabCount") or 1
+            if not 0 <= int(tab) < tabs:
+                raise ValueError("That inventory tab isn't unlocked.")
+            lo = int(tab) * INVENTORY_SLOTS_PER_TAB
+            hi = lo + INVENTORY_SLOTS_PER_TAB
+            slots = [s for s in self._slots() if lo <= s["SlotIndex"] < hi]
+            slots.sort(key=key)
+            moved = 0
+            for i, s in enumerate(slots):
+                if s["SlotIndex"] != lo + i:
+                    moved += 1
+                s["SlotIndex"] = lo + i
+            self._save()
+            self.log(f"    [state] Inventar-Tab {int(tab) + 1} sortiert ({len(slots)} Items, {moved} bewegt)")
+            return [(self.FORCE_RELOAD, {})] if moved else []
+
+    def market_count_material(self, template_id):
+        with self.lock:
+            return sum(s["StackCount"] for s in self._slots()
+                       if s["Item"].get("$type") == T("HeroConsumableItem")
+                       and s["Item"].get("TemplateId") == template_id)
+
+    def market_take_material(self, template_id, count):
+        """`count` pieces of a material/dye from the inventory stacks
+        (smallest stacks first): events."""
+        with self.lock:
+            stacks = sorted((s for s in self._slots()
+                             if s["Item"].get("$type") == T("HeroConsumableItem")
+                             and s["Item"].get("TemplateId") == template_id),
+                            key=lambda s: s["StackCount"])
+            if count <= 0 or sum(s["StackCount"] for s in stacks) < count:
+                raise ValueError("You don't have that many.")
+            events, left = [], count
+            for s in stacks:
+                n = min(left, s["StackCount"])
+                s["StackCount"] -= n
+                left -= n
+                if s["StackCount"] <= 0:
+                    self._take_slot(s["SlotIndex"])
+                    self.market_taken[s["SlotIndex"]] = time.time()
+                    events.append(("HeroInventoryRemoved", {"SlotIndex": s["SlotIndex"]}))
+                else:
+                    events.append(("HeroInventoryUpdated", {"SlotIndex": s["SlotIndex"],
+                                                            "StackCount": s["StackCount"]}))
+                if not left:
+                    break
+            self._save()
+            return events
+
+    def market_pay(self, field, amount):
+        """Take `amount` gold (InGameCoin) or blings (PremiumCash): {field: -amount}."""
+        with self.lock:
+            wallet = self.account["Wallet"]
+            if amount < 0 or wallet.get(field, 0) < amount:
+                raise ValueError("Not enough %s." % ("blings" if field == "PremiumCash" else "gold"))
+            wallet[field] -= amount
+            self._tag("ingame-market", -amount if field == "PremiumCash" else 0)
+            self._save()
+            return {field: -amount}
+
+    def market_receive(self, items, gold, blings, stack_max, avoid=()):
+        """Collect box -> account. items [{"Item", "Count"}]; materials stack
+        up to stack_max(template) per slot. Gold up to the storage capacity.
+        Returns (items left over, gold left, wallet deltas, events). avoid:
+        slots the client still shows as used (removal not yet delivered)."""
+        def free():
+            used = {x["SlotIndex"] for x in self._slots()} | set(avoid)
+            inv = self.account["Inventory"]
+            return next((i for i in range(inv["InventoryTabCount"] * INVENTORY_SLOTS_PER_TAB)
+                         if i not in used), None)
+        with self.lock:
+            occupied = self._occupied()
+            changed, left = {}, []
+            for entry in items:
+                item, count = entry["Item"], entry.get("Count", 1)
+                if item.get("$type") == T("HeroConsumableItem"):
+                    tid, top = item["TemplateId"], stack_max(item["TemplateId"])
+                    for s in self._slots():
+                        if not count:
+                            break
+                        if (s["Item"].get("$type") == T("HeroConsumableItem")
+                                and s["Item"].get("TemplateId") == tid and s["StackCount"] < top):
+                            n = min(count, top - s["StackCount"])
+                            s["StackCount"] += n
+                            count -= n
+                            changed[s["SlotIndex"]] = s
+                    while count:
+                        index = free()
+                        if index is None:
+                            break
+                        n = min(count, top)
+                        self._put_slot(index, copy.deepcopy(item), n)
+                        changed[index] = self._slots()[-1]
+                        count -= n
+                    if count:
+                        left.append({"Item": item, "Count": count})
+                else:
+                    index = free()
+                    if index is None:
+                        left.append(entry)
+                        continue
+                    self._put_slot(index, copy.deepcopy(item))
+                    changed[index] = self._slots()[-1]
+            wallet = self.account["Wallet"]
+            deltas = {}
+            if blings:
+                wallet["PremiumCash"] += blings
+                self._tag("ingame-market", blings)
+                deltas["PremiumCash"] = blings
+            gold_in = 0
+            if gold:
+                # above the storage capacity too (sales are the player's
+                # money); castle upgrades still stop at the capacity
+                gold_in = gold
+                wallet["InGameCoin"] += gold_in
+                deltas["InGameCoin"] = gold_in
+            self._save()
+            events = self._inventory_events([copy.deepcopy(s) for s in changed.values()], occupied)
+            return left, gold - gold_in, deltas, events
 
     def credit_attack(self, gains):
         """Bucht die Beute eines Angriffs: Wallet + Helden-XP/Level.
@@ -1613,6 +1855,10 @@ class AccountState:
             key, field = self.BOOST_FIELDS.get(a["ConsumableType"], (None, None))
             if key:
                 factors[key] = self.data.consumables[a["TemplateId"]].get(field, 0)
+        # Boost-Wochenende (community_events) zusätzlich zum Trank
+        for key, f in community_events.attack_factors(
+                datetime.datetime.now(datetime.timezone.utc)).items():
+            factors[key] = factors.get(key, 0) + f
         return active, factors
 
     def set_theme(self, theme_id):
@@ -1986,8 +2232,9 @@ class AccountState:
             "$type": T("HeroEquipmentItem"),
             "ArchetypeId": t.get("ArchetypeId", 0),
             "DyeTemplateId": 0,
+            # Effekt-Stufe 1-4 (4 ab Level 30; Level-60-Update: bleibt 4)
             "Effects": [{"$type": T("ItemEffect"), "Id": e["Id"],
-                         "Level": max(1, level * 4 // 30),
+                         "Level": min(4, max(1, level * 4 // 30)),
                          "Type": e.get("Type", 0)}
                         for e in t.get("Effects", [])],
             "IsBranded": False,
@@ -2011,6 +2258,29 @@ class AccountState:
         defaults = _equipment_spec(hero_spec).get("DefaultEquipmentTemplateIds") or {}
         return {slot: defaults[key] for key, slot in self.DEFAULT_EQUIPMENT_SLOTS.items()
                 if defaults.get(key)}
+
+    def rename_friend(self, account_id, name):
+        """A friend's new display name in this account's friend list (the
+        list keeps a copy of each friend's AccountSummary)."""
+        with self.lock:
+            changed = False
+            for f in self.account.get("Friends") or []:
+                if f.get("Id") == account_id and f.get("DisplayName") != name:
+                    f["DisplayName"] = name
+                    changed = True
+            if changed:
+                self._save()
+            return changed
+
+    def clear_defend_log(self):
+        """Battle log (DefendLog entries) emptied by an admin; returns how many."""
+        with self.lock:
+            log = self.account.get("DefendLog") or {}
+            n = len(log.get("DefendLogEntries") or [])
+            if n:
+                log["DefendLogEntries"] = []
+                self._save()
+            return n
 
     def choose_display_name(self, name):
         with self.lock:
@@ -2311,7 +2581,11 @@ class AccountState:
         # AttackSelectionResult setzt der Aufrufer außerhalb der Sperre ein
         # (game_server: die Auswahl liest die Spielstände aller Spieler,
         # auch diesen -- in der Sperre hängt der Server)
-        self.events.append(("ShowMoreCastle", {"RegionId": region, "Index": index}))
+        # No "Index" field: ShowMoreCastleNotification only has the Index of
+        # every Notification (running number, header n). Sending the reroll
+        # count there made the client drop the notification as already seen
+        # (e.g. first reroll = 1 after ForgeItemReady #1) -> endless loading.
+        self.events.append(("ShowMoreCastle", {"RegionId": region}))
         self.log(f"    [state] Region {region} neu gewürfelt (#{index}), "
                  f"-{price.get('Amount', 0)}")
 
@@ -2904,6 +3178,12 @@ class AccountState:
         wallet = self.account["Wallet"]
         if field and wallet[field] < price["Amount"]:
             raise ValueError(f"zu wenig {field}")
+        cap = wallet.get(field + "StorageCapacity") if field else None
+        if cap is not None and price["Amount"] > cap:
+            # gold above the cap (Ingame Market) must not pay for more than
+            # the storage holds; the client booked it already -> reload
+            self.events.append((self.FORCE_RELOAD, {}))
+            raise ValueError(f"Preis {price['Amount']} über der Lagerkapazität {cap}")
         if field:
             wallet[field] -= price["Amount"]
         self._set_building_rank(b, rank)
@@ -2913,6 +3193,9 @@ class AccountState:
             self._unlock_buildings()
 
     RANK_FIELDS = {1: "CastleHeartRank", 2: "WorkersCabinRank", 13: "ArchitectOfficeRank"}
+    # a notification the client doesn't know: it reloads the whole account
+    # (used by the forge, the Ingame Market collect and the cap guard)
+    FORCE_RELOAD = "ForgeItemCollected"
 
     def _set_building_rank(self, b, rank):
         """Rang setzen samt abhängiger Werte; meldet BuildingUpgradeCompleted."""
@@ -2999,7 +3282,12 @@ class AccountState:
         castle = castles.player_castle(self.account) or {}
         added = []
         for x, z in defense.get("death_spots", [])[:1]:
-            cid = max([0] + [c["EntityHarvestId"] for c in corpses]) + 1
+            # ids never repeat: a harvested corpse's id came back for the next
+            # corpse (max + 1 of an empty list = 1) and the game kept the old
+            # corpse's harvest marker on screen (2026-11-22)
+            cid = max([self.account.get("HeroCorpseNextId", 1)]
+                      + [c["EntityHarvestId"] + 1 for c in corpses])
+            self.account["HeroCorpseNextId"] = cid + 1
             materials = item_drops.corpse_materials(castle)
             # Ein Betrag ist Pflicht (sonst Assert "Invalid CurencyAmount" in
             # HeroCorpseHarvestingComponent); HeroCorpseSettings kennt keine
@@ -3494,8 +3782,15 @@ class AccountState:
             if n <= 0:
                 continue
             clock[bid] = since + n * period
-            status["CumulatedAmount"] = min(spec["Capacity"], status["CumulatedAmount"]
-                                            + n * spec["ProductionValue"])
+            # Boost-Wochenende (community_events): Perioden, die im Event
+            # enden, bringen ProductionValue mal Faktor
+            amount = sum(
+                spec["ProductionValue"] * community_events.mine_factor(
+                    b["SpecContainerId"], datetime.datetime.fromtimestamp(
+                        since + k * period, datetime.timezone.utc))
+                for k in range(1, n + 1)) if n <= 2000 else n * spec["ProductionValue"]
+            status["CumulatedAmount"] = min(spec["Capacity"],
+                                            status["CumulatedAmount"] + int(amount))
             changed = True
         if changed:
             self._save()
@@ -3540,7 +3835,9 @@ class AccountState:
         if full and status["Productionlevel"] >= top:
             status["ProductionExpirableId"] = NO_EXPIRABLE
             return []
-        seconds = castles.duration(spec["ProductionPeriod"])
+        # Boost-Wochenende der Material-Minen (community_events): kürzere Periode
+        seconds = max(60, int(castles.duration(spec["ProductionPeriod"])
+                              * community_events.material_period_factor(start)))
         e = {"$type": T("MineProductionExpirable"), "Id": "%024x" % random.getrandbits(96),
              "ExpirableType": "MineProduction", "BuildingId": int(bid),
              "ProductionValue": spec["ProductionValue"], "DurationSeconds": seconds,
@@ -3737,16 +4034,7 @@ class AccountState:
         if wallet[field] < amount:
             raise ValueError(f"zu wenig {field}")
         wallet[field] -= amount
-        if hero is None and expired is not None:  # abgelaufener Probe-Held
-            self.account[self.EXPIRED_TRIALS].remove(expired)
-            hero = expired
-            self.account["Heroes"].append(hero)
-        if hero is None:
-            hero = self._new_hero(spec_id)
-            self.account["Heroes"].append(hero)
-        else:  # behält Level und Ausrüstung aus dem Trial
-            hero.pop("ExpirationDate", None)
-            hero.pop("PriceReductionIds", None)
+        hero = self._grant_hero(spec_id)
         self.spells_unlocked += self._unlock_spells()
         # Ohne Meldung zeigt der Client den gekauften Helden nicht an.
         # Felder: HeroUnlockedNotification hat keine eigenen Strings im
@@ -3754,6 +4042,24 @@ class AccountState:
         self.events.append(("HeroUnlocked", {
             "Hero": copy.deepcopy(hero), "HeroSpecContainerId": spec_id}))
         self.log(f"    [state] Held {spec_id} gekauft, -{amount} {field}")
+
+    def _grant_hero(self, spec_id):
+        """Held dauerhaft in den Account: neu, ein abgelaufener Probe-Held
+        oder der laufende Probe-Held (behält Level und Ausrüstung)."""
+        hero = next((h for h in self.account["Heroes"]
+                     if h["HeroSpecContainerId"] == spec_id), None)
+        expired = next((h for h in self.account.get(self.EXPIRED_TRIALS) or []
+                        if h["HeroSpecContainerId"] == spec_id), None)
+        if hero is None and expired is not None:  # abgelaufener Probe-Held
+            self.account[self.EXPIRED_TRIALS].remove(expired)
+            hero = expired
+            self.account["Heroes"].append(hero)
+        if hero is None:
+            hero = self._new_hero(spec_id)
+            self.account["Heroes"].append(hero)
+        hero.pop("ExpirationDate", None)
+        hero.pop("PriceReductionIds", None)
+        return hero
 
     def _cmd_BuyHeroItemCommand(self, cmd):
         sku = self.data.skus[cmd["SkuCode"]]
@@ -3916,6 +4222,14 @@ class AccountState:
         in den Rückkauf (BuyBackId vergibt der Client)."""
         slot = self._take_slot(cmd["SlotIndex"])
         if slot is None:
+            price = cmd.get("ClientSellPrice") or {}
+            if time.time() - self.market_taken.get(cmd["SlotIndex"], 0) < 900 and price.get("Amount"):
+                # on the Ingame Market: the client booked the price itself
+                self._wallet_event(price["CurrencyType"], -price["Amount"])
+                self.events.append(("HeroInventoryRemoved", {"SlotIndex": cmd["SlotIndex"]}))
+                self.log(f"    [state] Verkauf von Slot {cmd['SlotIndex']} abgelehnt: "
+                         "Item steht im Ingame Market")
+                return
             raise KeyError(f"Slot {cmd['SlotIndex']} ist leer")
         price = cmd["ClientSellPrice"]
         field = CURRENCY[price["CurrencyType"]]

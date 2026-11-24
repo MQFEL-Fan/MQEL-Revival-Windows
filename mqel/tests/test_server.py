@@ -23,6 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "server"))
 
 import anticheat  # noqa: E402
+import attack  # noqa: E402
 import auth  # noqa: E402
 import balance  # noqa: E402
 import bling_shop  # noqa: E402
@@ -34,6 +35,7 @@ import game_server  # noqa: E402
 import account_state  # noqa: E402
 import limits  # noqa: E402
 import loot  # noqa: E402
+import level60  # noqa: E402
 import objectives  # noqa: E402
 import patcher  # noqa: E402
 import special_packs  # noqa: E402
@@ -156,6 +158,23 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(notes(1), [])
         invite()  # neue Meldung während der Sitzung kommt an, Zählung ab 1
         self.assertEqual(notes(2), [1])
+
+    def test_show_more_castle_keeps_running_index(self):
+        # 2026-11-20: the reroll count overwrote the notification Index; the
+        # first reroll of a session came as #1 after ForgeItemReady #1, the
+        # client dropped it as seen and the castle selection loaded forever
+        import notifications
+        q = notifications.NotificationQueue()
+        q.reset(0)
+        q.push("ForgeItemReady", {})
+        q.ack(1)
+        n = q.push("ShowMoreCastle", {"RegionId": 6, "Index": 1, "NotificationType": 0})
+        self.assertEqual((n["Index"], n["NotificationType"], n["RegionId"]), (2, 54, 6))
+        state = account_state.AccountState(os.path.join(self.tmp.name, "reroll.json"),
+                                           log=lambda m: None, profile="new", account_id=2099999)
+        state.account["Wallet"]["InGameCoin"] = 1000
+        state._buy_show_more_castle({"ItemId": 6, "Price": {"CurrencyType": 2, "Amount": 500}})
+        self.assertEqual(state.events[-1], ("ShowMoreCastle", {"RegionId": 6}))
 
     def test_chat_login_uses_session_token(self):
         token = self.register("chatty")
@@ -388,6 +407,510 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(self.admin("ListAccounts", {})[0], 200)
 
 
+class KeybindPanelTest(unittest.TestCase):
+    # UI patch 12: KEYS button + keybind panel in every lobby top bar
+    def test_topview_gets_keybind_panel(self):
+        import ui_patches
+        out = ui_patches.patched(os.path.join(ROOT, "client", "GameData"))
+        topviews = [k for k in out if re.search(r"/TopView[^/]*\.html$", k)]
+        self.assertTrue(topviews)
+        for k in topviews:
+            text = out[k].decode("utf-8")
+            self.assertEqual(text.count('id="mqel-kb-button"'), 1, k)
+            self.assertEqual(text.count('id="mqel-kb-panel"'), 1, k)
+            self.assertLess(text.index('id="mqel-kb-button"'), text.index('id="lobby-option-settings"'), k)
+            self.assertNotIn("{{", ui_patches.keybind_panel())  # body, not a jsrender template
+
+    def test_patcher_ships_wasd_dll(self):
+        # GameBin carries the helper as mqelwasd9_1.dll (no Wine built-in has
+        # that name, so Proton loads it) and the exe imports that name: .new
+        # unless the installed GameBin already has it (.V version), never in
+        # GameBinCRC.json
+        if not os.path.isfile(patcher.WASD_DLL):
+            self.skipTest("tools/wasd/bin/xinput9_1_0.dll not built")
+        gb = [p for p in patcher.packages(datetime.date(2026, 11, 21)) if p.rm_type == patcher.GAME_BIN][0]
+        self.assertTrue(gb.version.startswith(patcher.GAME_VERSION + ".V"), gb.version)
+        files = gb.files(gb.version)
+        self.assertEqual(patcher.WASD_NAME, "mqelwasd9_1.dll")
+        self.assertIn(patcher.WASD_NAME, files)
+        self.assertIn(b"mqelwasd9_1.dll\0", files["MightyQuest.exe"])
+        self.assertNotIn(b"XINPUT9_1_0.dll", files["MightyQuest.exe"])
+        self.assertEqual(gb._suffix(patcher.WASD_NAME, "280139"), ".new")
+        self.assertEqual(gb._suffix(patcher.WASD_NAME, "280139.Xc4653d2e"), ".new")
+        self.assertEqual(gb._suffix(patcher.WASD_NAME, "280139.W00000000"), ".new")
+        self.assertEqual(gb._suffix(patcher.WASD_NAME, "280139.V00000000"), ".replace")
+        self.assertEqual(gb._suffix("MightyQuest.exe", "280139"), ".replace")
+        crc = [p for p in patcher.packages(datetime.date(2026, 11, 21)) if p.rm_type == 9][0]
+        self.assertNotIn(b"mqelwasd", list(crc.files(crc.version).values())[0])
+
+    def test_wasd_layout_frees_movement_keys(self):
+        path = os.path.join(ROOT, "tools", "wasd", "CustomUserSettings.json")
+        with open(path, encoding="utf-8-sig") as f:
+            sd = json.load(f)["ShortcutsDictionary"]
+        keys = lambda a: [e["Key"] for e in sd[a]["KeyboardShortcuts"]]
+        for action, entries in sd.items():
+            for e in entries.get("KeyboardShortcuts", []):
+                if not e["RequiredModifiers"]:
+                    self.assertNotIn(e["Key"], (26, 4, 22, 7), action)  # W A S D
+        self.assertEqual(keys("OrbitGameCameraLeft"), [80, 20])   # Left arrow, Q
+        self.assertEqual(keys("OrbitGameCameraRight"), [79, 8])   # Right arrow, E
+        self.assertEqual(keys("Ability5"), [21])                   # R
+
+
+@unittest.skipUnless(len(loot.xp_per_level()) >= 60, "level-60 data not applied (tools/apply_level60.py)")
+class Level60Test(unittest.TestCase):
+    """Level-60 update (server/level60.py, docs/90-level60.md)."""
+
+    def test_hero_levels_to_60(self):
+        xp = loot.xp_per_level()
+        self.assertEqual(len(xp), 60)
+        self.assertEqual(loot.level_for_xp(xp[59]), 60)
+        self.assertEqual(loot.level_for_xp(xp[59] - 1), 59)
+        self.assertTrue(all(b > a for a, b in zip(xp, xp[1:])))
+
+    def test_skills_five_ranks_hawk_hack(self):
+        for hero in (2, 3, 4, 5):
+            for sid, mins in account_state._hero_spells(hero):
+                self.assertEqual(len(mins), 5, sid)
+                self.assertEqual(mins, sorted(mins), sid)
+                self.assertLessEqual(mins[-1], 60, sid)
+        path = glob.glob(os.path.join(loot.SETTINGS, "Abilities", "001373 - *", "GAMEPLAY.JSON"))[0]
+        with open(path, encoding="utf-8-sig") as f:
+            levels = json.load(f)[0]["Levels"]
+        self.assertEqual([lv["Cooldown"] for lv in levels], [10.0, 9.375, 8.75, 8.125, 7.5])
+
+    def test_spells_reach_rank_5(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = account_state.AccountState(os.path.join(d, "a.json"), log=lambda m: None,
+                                           profile="full")
+            self.assertTrue(s.account["Heroes"])
+            for h in s.account["Heroes"]:
+                h["Level"] = 60
+            s._unlock_spells()
+            levels = {sp["Level"] for sp in s.account["UnlockedSpells"]}
+            self.assertEqual(levels, {5})
+
+    def test_region_10_castles_and_fake_players(self):
+        sel = castles.attack_selection(region_id=10)
+        # 10 castle levels on the 5 rings of the 3D selection: group Level
+        # 35..39 (ring), castles keep their own level
+        self.assertEqual([g["Level"] for g in sel["CastlesByLevel"]], [35, 36, 37, 38, 39])
+        levels = sorted({c["Level"] for g in sel["CastlesByLevel"] for c in g["Castles"]})
+        self.assertEqual(levels, list(castles.level60.REGION_CASTLE_LEVELS))
+        at60 = [c for g in sel["CastlesByLevel"] for c in g["Castles"] if c["Level"] == 60]
+        self.assertGreaterEqual(len(at60) + 1, 3)  # plus the boss
+        self.assertEqual(sel["BossCastle"]["Level"], 60)
+        kinds = {c["CastleType"] for g in sel["CastlesByLevel"] for c in g["Castles"]}
+        self.assertEqual(kinds, {castles.CASTLE_TYPE_USER, castles.CASTLE_TYPE_UBISOFT})
+        c = castles.find_castle(60350)
+        self.assertEqual((c["Level"], castles.heart_rank(c)), (35, 35))
+        self.assertIsNone(castles.find_castle(60360))  # no level-36 castles
+        fake = castles.find_castle(castles.FAKE_PLAYER_BASE + 60500)
+        self.assertEqual(castles.heart_rank(fake), 50)
+        boss = castles.find_castle(60999)
+        tiers = [t["Tier"] for t in attack._castle(boss)["CreatureTiers"]]
+        self.assertGreater(max(tiers), 8)
+
+    def test_region_10_unlocked_after_upper_bestmount(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = account_state.AccountState(os.path.join(d, "a.json"), log=lambda m: None,
+                                           profile="new")
+            for owner in [s.account, *s.account["Heroes"]]:
+                owner["AttackRegions"] = [{"$type": account_state.T("AccountAttackRegion"),
+                                           "AttackRegionId": 9, "Status": 3}]
+            s._complete_attack_regions()
+            for owner in [s.account, *s.account["Heroes"]]:
+                status = {r["AttackRegionId"]: r["Status"] for r in owner["AttackRegions"]}
+                self.assertEqual(status.get(10), 2)
+
+    def test_client_settings_match_server(self):
+        """The players' settings.bin (patcher) has the same files as the
+        server's loose copies: changed and new ones."""
+        version = next(p for p in patcher.packages(datetime.date(2026, 3, 10))
+                       if p.rm_type == 2).version
+        self.assertIn(".L" + patcher.level60.rules_crc(), version)
+        blob = patcher._data_bin_files(version)[patcher.SETTINGS_BIN]
+        files = settings_archive.files(settings_archive.read(blob)[0])
+        for name in ("GENERALSETTINGS\\HEROSETTINGS.JSON", "GENERALSETTINGS\\ATTACKADVISORSETTINGS.JSON",
+                     "ABILITIES\\001373 - ARCHER_TRAPCONTROLSKILL\\GAMEPLAY.JSON"):
+            path = next(p for p in files if p.endswith(name))
+            loose = os.path.join(loot.SETTINGS, *path.split("/")[1:-1], path.split("\\")[-1])
+            with open(loose, "rb") as f:
+                self.assertEqual(files[path], f.read(), name)
+        new = [p for p in files if "/700000 - " in p or "/700001 - " in p]
+        self.assertTrue(new)
+
+    def test_region_map_css(self):
+        import ui_patches
+        out = ui_patches.patched(os.path.join(ROOT, "client", "GameData"))
+        css = out["Data/UI/Css/modules/attackSelection/regionSelectionModule.css"].decode()
+        self.assertIn(".castle-position-10{", css)
+        # gold tint baked into the images: -webkit-filter breaks the map zoom
+        self.assertNotIn("filter", css)
+        self.assertIn(".castle-10{position:relative;background:url('data:image/png;base64,", css)
+
+    def test_goldmaw_quest_and_boss(self):
+        level60 = castles.level60
+        objs = {o["Id"]: o for o in objectives.definitions().values()}
+        o = objs[level60.GOLDMAW_OBJECTIVE]
+        self.assertEqual(o["CastleId"], {"CastleType": "Ubisoft", "Id": level60.BOSS_CASTLE_ID})
+        self.assertIn(level60.GOLDMAW_ID, [c.get("SpecContainerId") for c in o["Conditions"]])
+        boss = castles.find_castle(level60.BOSS_CASTLE_ID)
+        specs = {e["SpecContainerId"] for r in boss["Rooms"] for e in r.get("Creatures") or []}
+        self.assertIn(level60.GOLDMAW_ID, specs)
+        self.assertNotIn(level60.GOLDMAW_SOURCE, specs)
+        self.assertEqual(level60._top_tier("Creatures", level60.GOLDMAW_ID, 60), 1)
+        done = objectives.completed_by_attack(
+            {"Objectives": [{"ObjectiveId": 105, "Status": objectives.UNLOCKED}]},
+            level60.BOSS_CASTLE_ID, 1, objectives.COMPLETION_TREASURE_ROOM,
+            {"Creature": {level60.GOLDMAW_ID: 1}})
+        self.assertEqual(done, [105])
+        vis = os.path.join(loot.SETTINGS, "GeneralSettings", "VISUALATTACKSELECTIONSETTINGS.JSON")
+        with open(vis, encoding="utf-8-sig") as f:
+            self.assertIn("10", json.load(f)["BossCastleModelsByRegion"])
+
+    def test_old_level60_data_gets_patched(self):
+        # a client with an older level-60 data version (other rules CRC)
+        # must get the whole new files, not stay on the old data
+        client = {"RMPackageVersions": [
+            {"RMPackageId": {"RMPackageType": t, "PackageName": ""},
+             "VersionName": "104956.L00000000"} for t in (2, 7, 10, 11)]}
+        out = patcher.launcher_and_packages(client, "http://x", datetime.date(2026, 11, 21))
+        flags = {p["RMPackageVersion"]["RMPackageId"]["RMPackageType"]: p["RMPackagePatchFlags"]
+                 for p in out["RMServerPackagesVersion"]["RMPackagePatches"]}
+        self.assertEqual({flags[t] for t in (2, 7, 10, 11)}, {patcher.CAN_INSTALL_PATCH})
+        files = patcher._data_bin_files(next(
+            p for p in patcher.packages(datetime.date(2026, 11, 21)) if p.rm_type == 2).version)
+        en = json.loads(files["Data/GameplaySettings/Oasis/oasis_en.json"].decode("utf-8-sig"))
+        self.assertEqual(en["Translations"]["16782"], "Splendorado")
+        patcher.crc_list("crc/DataBinCRC.json", files)  # every file has a CRC entry
+        self.assertIsNotNone(patcher._version_parts(
+            "104956.L%s.R2" % level60.rules_crc()))   # older room-card marker still parsed
+
+    def test_skill_tooltips_ranks_4_5(self):
+        path = glob.glob(os.path.join(loot.SETTINGS, "Abilities", "000063 - *", "UI.JSON"))[0]
+        with open(path, encoding="utf-8-sig") as f:
+            text = f.read()
+        self.assertIn('"TaggedSpec":"Caltrops damage 5"', text)
+        tags = "".join(open(p, encoding="utf-8-sig").read() for p in glob.glob(
+            os.path.join(loot.SETTINGS, "Buffs", "7*", "GAMEPLAY.JSON")))
+        self.assertIn('"Tag":"Caltrops damage 5"', tags)
+
+    def test_region_map_uses_steam_ui(self):
+        import ui_patches
+        out = ui_patches.patched(os.path.join(ROOT, "client", "GameData"))
+        css = out["Data/UI/Css/modules/attackSelection/regionSelectionModule.css"].decode()
+        self.assertIn("castles-container{width:1920px;height:1008px", css)
+        boss = out["Data/UI/Css/modules/attackSelection/castleSelectorModule.css"].decode()
+        self.assertIn(".bossId-60999{", boss)
+
+    def test_shop_items_above_30(self):
+        level60 = castles.level60
+        with open(os.path.join(loot.SETTINGS, "HeroItems", "HEROITEMTEMPLATES.JSON"),
+                  encoding="utf-8-sig") as f:
+            templates = {t["Id"]: t for t in json.load(f)["TemplateList"]}
+        skus = account_state.GameData().skus
+        self.assertEqual((templates[64130]["LevelMin"], templates[64130]["LevelMax"]), (30, 30))
+        new = [s for s in skus.values() if s.get("ItemType") == 3 and int(s["Code"]) >= level60.SHOP_SKU_FIRST_CODE
+               and int(s["Code"]) < level60.SHOP_SKU_FIRST_CODE + 10000]
+        levels = {templates[s["ItemId"]]["LevelMin"] for s in new if s["ShopContext"] == 2}
+        self.assertEqual(levels, set(range(33, 61, 3)))
+        crafted = {templates[s["ItemId"]]["LevelMin"] for s in new if s["ShopContext"] == 6}
+        self.assertEqual(crafted, set(range(35, 61, 5)))  # blacksmith item crafting
+        gold = [s["Price"]["Amount"] for s in new if s["Price"]["CurrencyType"] == 2]
+        self.assertLess(max(gold), 500000)
+
+    def test_exe_sky_switch_and_forge_prices(self):
+        import struct
+        level60 = castles.level60
+        exe_path = os.path.join(ROOT, "server", "state", "tls", "MightyQuest_base.exe")
+        if not os.path.exists(exe_path):
+            self.skipTest("no exe")
+        with open(exe_path, "rb") as f:
+            exe = f.read()
+        out = level60.patch_exe(exe)
+        at = out.find(bytes.fromhex("8b442408 48 56 83f809 0f87"))
+        self.assertGreater(at, 0)                      # switch takes region 10
+        self.assertEqual(level60.patch_exe(out), out)  # applied once only
+        skus = account_state.GameData().skus.values()
+        for kind in level60.FORGE_SKU_TYPES:           # craft, reforge, upgrade
+            levels = {x["ItemCount"] for x in skus if x.get("ItemType") == kind and x.get("IsActive")}
+            self.assertIn(60, levels)
+        with open(os.path.join(loot.SETTINGS, "GeneralSettings", "CASTLEITEMVALUESETTINGS.JSON"),
+                  encoding="utf-8-sig") as f:
+            heart = {x["ItemCount"] for x in json.load(f)["Items"]
+                     if x.get("ItemType") == 10 and x.get("ItemId") == 1}
+        self.assertEqual(max(heart), 60)
+        heart_dir = glob.glob(os.path.join(loot.SETTINGS, "Buildings", "000001 - *"))[0]
+        with open(os.path.join(heart_dir, "UI.JSON"), encoding="utf-8-sig") as f:
+            ui = [c for c in json.load(f) if "Ranks" in c][0]
+        self.assertEqual(len(ui["Ranks"]), 60)  # icon of rank 31+ (crash at rank 31)
+
+    def test_exe_loot_filter_patch(self):
+        """Hero loot filter (loot_filter.py): both hooks, one relocation for
+        the XInput slot, applied once only, filter code as designed."""
+        import loot_filter
+        exe_path = os.path.join(ROOT, "server", "state", "tls", "MightyQuest_local.exe")
+        if not os.path.exists(exe_path):
+            self.skipTest("no exe")
+        with open(exe_path, "rb") as f:
+            exe = level60.patch_exe(f.read())
+        out = loot_filter.patch_exe(exe)
+        self.assertNotEqual(out, exe)
+        self.assertEqual(out.count(loot_filter._COLLECT), 0)   # CollectLoot hooked
+        self.assertEqual(out.count(loot_filter._PULL), 0)      # forced pull hooked
+        self.assertEqual(loot_filter.patch_exe(out), out)      # applied once only
+        self.assertEqual(len(out), len(exe))
+        code, iat_at = loot_filter._filter_code(0x1000000, 0x42f167, 0x1cdac04)
+        self.assertEqual(code[iat_at:iat_at + 4], (0x1cdac04).to_bytes(4, "little"))
+        self.assertIn((0x4D51454C).to_bytes(4, "little"), code)  # "MQEL" question
+        self.assertIn(bytes.fromhex("83781403"), code)            # hero items only (type 3)
+
+    def test_forge_xp_monsters_sky(self):
+        def load(*p):
+            with open(os.path.join(loot.SETTINGS, *p), encoding="utf-8-sig") as f:
+                return json.load(f)
+        self.assertEqual(load("GeneralSettings", "FORGESETTINGS.JSON")["MaxForgeItemLevel"], 60)
+        per = load("GeneralSettings", "FORGECRAFTINGMATERIALSSETTINGS.JSON")[
+            "HeroItemCategoryTypeConversionTable"]["Weapon"]["PerLevelCraftingMaterialRequirement"]
+        self.assertIn("60", per)
+        mult = {r["MinLevel"]: r["XpLootBaseCpMultiplier"] for r in load(
+            "GeneralSettings", "ATTACKERREWARDSETTINGS.JSON")["XpLootBaseCpMultiplierTable"]}
+        self.assertEqual(mult[30], 30)
+        self.assertGreater(mult[59], 150)
+        envs = load("GeneralSettings", "ENVIRONMENTSETTINGSCOLLECTION.JSON")["Environments"]
+        self.assertIn("Region_8", [e["EnvironmentName"] for e in
+                                   envs["AttackSelection"]["EnvironmentSettingsList"]])
+        path = glob.glob(os.path.join(loot.SETTINGS, "Creatures", "001028 - *", "GAMEPLAY.JSON"))[0]
+        with open(path, encoding="utf-8-sig") as f:
+            comp = next(c for c in json.load(f) if "Tiers" in c)
+        top = comp["Tiers"][-1]["Tier"]
+        mods = [m for sp in comp["Specializations"] for m in sp["TierModifiers"] if top in m["Tiers"]]
+        self.assertTrue(mods and mods[0]["StatsModifier"].get("HealthPerLevel", 0) > 0)
+
+    def _ability(self, sid, kind="GAMEPLAY.JSON"):
+        path = glob.glob(os.path.join(loot.SETTINGS, "Abilities", "%06d - *" % sid, kind))[0]
+        with open(path, encoding="utf-8-sig") as f:
+            return json.load(f)
+
+    def _tag_values(self):
+        out = {}
+        def walk(o):
+            if isinstance(o, dict):
+                if isinstance(o.get("Tag"), str):
+                    out.setdefault(o["Tag"], o)
+                for v in o.values():
+                    walk(v)
+            elif isinstance(o, list):
+                for v in o:
+                    walk(v)
+        for p in glob.glob(os.path.join(loot.SETTINGS, "*", "*", "GAMEPLAY.JSON")):
+            with open(p, "rb") as f:
+                data = f.read()
+            if b'"Tag"' in data:
+                walk(json.loads(data.decode("utf-8-sig")))
+        return out
+
+    def test_trap_skills_cooldown_10_to_7_5(self):
+        for sid in castles.level60.TRAP_SKILLS:  # all four heroes
+            levels = self._ability(sid)[0]["Levels"]
+            self.assertEqual([lv["Cooldown"] for lv in levels], [10.0, 9.375, 8.75, 8.125, 7.5], sid)
+
+    def test_skill_ranks_3_to_5_grow(self):
+        tags = self._tag_values()
+        def shown(sid, param="Multiplier"):
+            ui = next(c["Levels"] for c in self._ability(sid, "UI.JSON") if "Levels" in c)
+            out = []
+            for lv in ui:
+                f = [x for x in lv["DescriptionFormulas"] if "damage" in x["TaggedSpec"].lower()][0]
+                out.append(tags[f["TaggedSpec"]].get(param, 1.0))
+            return out
+        # Hawk: Harass (damage from the spawned hawk's ability, by slot)
+        self.assertEqual(shown(157), [0.2, 0.25, 0.3, 0.35, 0.4])
+        self.assertEqual(shown(35), [1.0, 1.2, 1.4, 1.6, 1.8])         # Stunning Blow
+        self.assertEqual(shown(607), [0.2, 0.2, 0.23, 0.26, 0.29])     # Thunderclap (flat)
+        self.assertEqual(shown(1306, "Value"), [0.1, 0.12, 0.14, 0.16, 0.18])  # Teen Spirit
+        # ranks IV/V of Harass and Dive spawn their own hawk copy (tiers to 60)
+        levels = self._ability(157)[0]["Levels"]
+        hawks = [e["SpawnableEntitySpecContainerRefId"] for lv in levels
+                 for o in lv["Operations"]["Operations"] for e in o.get("SpawnableEntities") or []]
+        self.assertEqual(hawks[:3], [1089] * 3)
+        self.assertEqual(len(set(hawks[3:])), 2)
+        for cid in hawks[3:]:
+            path = glob.glob(os.path.join(loot.SETTINGS, "Creatures", "%06d - *" % cid, "GAMEPLAY.JSON"))
+            with open(path[0], encoding="utf-8-sig") as f:
+                tiers = next(c for c in json.load(f) if "Tiers" in c)["Tiers"]
+            self.assertEqual(tiers[-1]["Level"], 60)
+
+    def test_storage_rank_6(self):
+        for folder in ("000003 - GoldStorage", "000004 - LifeForceStorage"):
+            with open(os.path.join(loot.SETTINGS, "Buildings", folder, "GAMEPLAY.JSON"),
+                      encoding="utf-8-sig") as f:
+                ranks = json.load(f)[0]["Ranks"]
+            self.assertEqual(len(ranks), 6)
+            self.assertEqual((ranks[5]["Capacity"], ranks[5]["BuildingRequirementRank"]), (1000000, 60))
+            with open(os.path.join(loot.SETTINGS, "Buildings", folder, "UI.JSON"),
+                      encoding="utf-8-sig") as f:
+                self.assertGreaterEqual(len([c for c in json.load(f) if "Ranks" in c][0]["Ranks"]), 6)
+        skus = [s for s in account_state.GameData().skus.values()
+                if s.get("ItemType") == 10 and s.get("ItemId") in (3, 4) and s.get("ItemCount") == 6]
+        gold = [s["Price"]["Amount"] for s in skus if s.get("IsActive") and s["Price"]["CurrencyType"] == 2]
+        self.assertEqual(len(gold), 2)
+        self.assertLess(max(gold), 500000)  # payable with a full rank-5 storage
+
+    def test_region_10_boss_pictures_and_drops(self):
+        import item_drops
+        with open(os.path.join(loot.SETTINGS, "UI", "UIGLOBALSETTINGS.JSON"), encoding="utf-8-sig") as f:
+            ui = json.load(f)
+        self.assertEqual(ui["RegionBossPictureLayerNames"]["10"], ui["RegionBossPictureLayerNames"]["9"])
+        self.assertEqual(ui["CastlePopupRegionBossPictureLayerNames"]["10"],
+                         ui["CastlePopupRegionBossPictureLayerNames"]["9"])
+        self.assertIn("1200", ui["BossPictureLayerNames"])            # Goldmaw's portrait
+        levels = {item_drops.roll_item_level(50, hero_level=60) for _ in range(200)}
+        self.assertTrue(levels <= {49, 50, 51} and 50 in levels)
+        self.assertEqual(max(item_drops.roll_item_level(60, hero_level=60) for _ in range(50)), 60)
+        self.assertLessEqual(max(item_drops.roll_item_level(50, hero_level=45) for _ in range(50)), 45)
+
+    @staticmethod
+    def _building(folder):
+        with open(os.path.join(loot.SETTINGS, "Buildings", folder, "GAMEPLAY.JSON"),
+                  encoding="utf-8-sig") as f:
+            return next(c for c in json.load(f) if "Ranks" in c)
+
+    def test_heart_defense_rating_750(self):
+        ranks = self._building("000001 - CastleHeart")["Ranks"]
+        self.assertEqual([ranks[r - 1]["MaxConstructionPoints"] for r in (30, 40, 60)], [375, 500, 750])
+
+    def test_architect_rooms_9_and_10(self):
+        ranks = self._building("000013 - ArchitectOffice")["Ranks"]
+        self.assertEqual([(r["MaxRooms"], r["BuildingRequirementRank"]) for r in ranks[6:]],
+                         [(9, 40), (10, 50)])
+        skus = account_state.GameData().skus.values()
+        for rank in (7, 8):
+            gold = [s["Price"]["Amount"] for s in skus if s.get("IsActive") and s.get("ItemType") == 10
+                    and s.get("ItemId") == 13 and s.get("ItemCount") == rank
+                    and s["Price"]["CurrencyType"] == 2]
+            self.assertEqual(len(gold), 1)
+            self.assertLess(gold[0], 500000)
+        for rank, rooms in level60.ARCHITECT_ROOMS.items():
+            for room, _ in rooms:
+                self.assertEqual(castles._required_rank("Rooms", room), rank)
+                self.assertTrue(any(s.get("IsActive") and s.get("ItemType") == 12 and s.get("ItemId") == room
+                                    for s in skus))
+
+    def test_mines_rank_13_and_more_mines(self):
+        for folder in ("000005 - GoldMine", "000006 - LifeForceMine"):
+            spec = self._building(folder)
+            self.assertEqual([r["BuildingRequirementRank"] for r in spec["Ranks"][10:]], [30, 38, 52])
+            self.assertEqual([r["BuildingRequirementRank"] for r in spec["BuildingInstanceRequirements"]],
+                             [1, 9, 15, 21, 35, 55])
+            self.assertLess(spec["Ranks"][11]["Capacity"], spec["Ranks"][12]["Capacity"])
+        self.assertEqual(castles.building_instances(16), [2, 2, 2, 35, 55])
+        self.assertEqual(castles.mine_rank(5, 13)["Capacity"], 50000)
+        import special_packs
+        quota = lambda lv: next(m for m in special_packs.modifiers([], lv, {})  # noqa: E731
+                                if m["SkuCode"] == "15522")["LimitedQuantityMax"]
+        self.assertEqual([quota(30), quota(35), quota(55)], [3, 4, 5])
+
+    def test_craftable_gold_dragon(self):
+        skus = account_state.GameData().skus
+        src = skus[str(level60.DRAGON_SKU)]
+        new = next(s for s in skus.values() if s.get("ItemType") == 5 and s.get("ItemId") == level60.DRAGON_ID)
+        self.assertTrue(new.get("IsActive"))
+        self.assertGreaterEqual(new["Price"]["Amount"], 2 * src["Price"]["Amount"])
+        path = glob.glob(os.path.join(loot.SETTINGS, "Creatures", "%06d - *" % level60.DRAGON_ID,
+                                      "GAMEPLAY.JSON"))
+        with open(path[0], encoding="utf-8-sig") as f:
+            comps = json.load(f)
+        req = next(c["CraftingBuildingRequirementSpec"] for c in comps if "CraftingBuildingRequirementSpec" in c)
+        self.assertEqual(req, {"BuildingRequirementSpecContainerId": 10, "BuildingRequirementRank": 15})
+        self.assertGreater(loot.creature(level60.DRAGON_ID)[0], loot.creature(level60.DRAGON_SOURCE)[0])
+        with open(path[0].replace("GAMEPLAY.JSON", "UI.JSON"), encoding="utf-8-sig") as f:
+            ui = json.load(f)
+        self.assertEqual(ui[0]["OasisName"], 16783)  # "Goldmaw the Insatiable"
+        self.assertEqual(ui[1]["LayerName"], "UI_Common_CreaturesIcons_Rares:missflameo")
+        portal = self._building("000010 - SummoningPortal")["Ranks"]
+        self.assertEqual((len(portal), portal[14]["BuildingRequirementRank"]), (15, 60))
+        icons = level60.dragon_icon_files(os.path.join(ROOT, "client", "GameData"))
+        self.assertEqual(len(icons), 11)   # 3 sizes x (card, inventory card, lock) + 2 web pictures
+        self.assertTrue(all(v[1:4] == b"PNG" for v in icons.values()))
+
+    def test_new_rooms_order_and_icons(self):
+        self.assertEqual([r for r, _ in level60.ARCHITECT_ROOMS[7]], [7093, 7098])   # Cross Chamber 04 first
+        self.assertEqual([r for r, _ in level60.ARCHITECT_ROOMS[8]], [7094, 7102])
+        for room in level60.ROOMS_ICON_FILE:
+            path = glob.glob(os.path.join(loot.SETTINGS, "Rooms", "%06d - *" % room, "UI.JSON"))
+            with open(path[0], encoding="utf-8-sig") as f:
+                # an existing atlas picture of a similar cross room (no wardrobe)
+                layers = [c.get("LayerName") for c in json.load(f) if "LayerName" in c]
+                self.assertEqual(layers, [level60.ROOM_ATLAS_PICTURE[room]])
+
+    def test_region_10_map_badge_left_of_medallion(self):
+        import ui_patches
+        css = ui_patches.region10_css()
+        cx, cy = ui_patches._medallion_center()
+        self.assertIn(".map-level-10{width:72px;height:53px;left:%dpx;top:%dpx" % (cx - 88, cy - 42), css)
+        self.assertLess(cx - 88 + 72, cx)  # the badge ends left of the dragon's center
+
+    def test_region_10_fake_players_old_bosses(self):
+        bosses = set()
+        for f in castles.fake_player_castles():
+            if f["Level"] >= level60.REGION_LEVELS[0]:
+                throne = [e["SpecContainerId"] for e in f["Rooms"][0].get("Creatures") or []]
+                self.assertNotIn(level60.GOLDMAW_ID, throne)
+                bosses.update(throne)
+        self.assertEqual(bosses & set(level60.OLD_REGION_BOSSES), set(level60.OLD_REGION_BOSSES))
+
+
+class PresenceTest(unittest.TestCase):
+    """Discord Rich Presence (server/presence.py)."""
+
+    class _State:
+        def snapshot(self):
+            return {"BuildInfo": {"Level": 42}}
+
+    class _Player:
+        account_id = 2000999
+
+    def _player(self):
+        p = self._Player()
+        p.state = self._State()
+        return p
+
+    def test_activities_and_answer(self):
+        import presence
+        p = self._player()
+        presence.note(p, "AccountInformationService.hqs/GetAccountInformation", {}, "1.2.3.4")
+        self.assertEqual(presence.activity(p)["details"], presence.LOBBY)
+        self.assertEqual(presence.activity(p)["state"], "Castle level 42")
+        presence.note(p, "AttackService.hqs/StartAttack", {"castleAccountId": 20}, "1.2.3.4")
+        self.assertTrue(presence.activity(p)["details"].startswith("Attacking "), presence.activity(p))
+        self.assertNotEqual(presence.activity(p)["details"], "Attacking a castle")
+        presence.note(p, "AttackService.hqs/EndAttack", {}, "1.2.3.4")
+        cmd = {"$type": "HyperQuest.GameServer.Contracts.AddCastleCreatureCommand, HyperQuest.GameServer.Contracts"}
+        presence.note(p, "ServerCommandService.hqs/SendCommands", {"commands": [cmd]}, "1.2.3.4")
+        self.assertEqual(presence.activity(p)["details"], presence.BUILDING)
+        cmd = {"$type": "HyperQuest.GameServer.Contracts.BuyCommand, HyperQuest.GameServer.Contracts"}
+        presence.note(p, "ServerCommandService.hqs/SendCommands", {"commands": [cmd]}, "1.2.3.4")
+        self.assertEqual(presence.activity(p)["details"], presence.SHOPPING)
+
+        class Players:
+            players = {"Tester": p}
+        self.addCleanup(setattr, presence, "APP_ID", presence.APP_ID)
+        presence.APP_ID = "123"
+        status, body = presence.answer(Players, "Tester", "1.2.3.4")
+        self.assertEqual(status, 200)
+        app, activity = body.decode().split("\n", 1)
+        self.assertEqual((app, json.loads(activity)["details"]), ("123", presence.SHOPPING))
+        self.assertEqual(presence.answer(Players, "Tester", "9.9.9.9")[0], 204)   # other IP
+        self.assertEqual(presence.answer(Players, "Nobody", "1.2.3.4")[0], 204)
+        p.presence_seen -= presence.STALE_S + 1
+        self.assertEqual(presence.answer(Players, "Tester", "1.2.3.4")[0], 204)   # inactive
+        presence.APP_ID = ""
+        p.presence_seen += presence.STALE_S + 1
+        self.assertEqual(presence.answer(Players, "Tester", "1.2.3.4")[0], 204)   # no app id
+
+
 class FreeTrialTest(unittest.TestCase):
     def test_schedule(self):
         self.assertIsNone(free_trials.current(datetime.date(2026, 10, 17)))
@@ -461,6 +984,8 @@ class FreeTrialTest(unittest.TestCase):
 
     def test_patcher_versions(self):
         import patcher
+        self.addCleanup(setattr, patcher, "WASD_DLL", patcher.WASD_DLL)
+        patcher.WASD_DLL = None  # without the WASD helper: no GameBin package
         pkgs = patcher.packages(datetime.date(2026, 11, 3))
         self.assertEqual(sorted(p.rm_type for p in pkgs), [2, 7, 8, 10, 11])
         ui = pkgs.pop()
@@ -471,15 +996,19 @@ class FreeTrialTest(unittest.TestCase):
         self.assertRegex(ui.version, r"^280139\.U[0-9a-f]{8}$")
         self.assertEqual(old.keys(), new.keys())
         self.assertTrue(all(old[k] != new[k] for k in old))
-        self.assertRegex(version, r"^104956\.Halloween\.T\d+$")
+        self.assertRegex(version, r"^104956\.Halloween\.T\d+(\.L[0-9a-f]{8})?$")
         files = pkgs[1].files(version)[patcher.SETTINGS2]
         self.assertIn(b'"Id": %d' % free_trials.current(datetime.date(2026, 11, 3))["Id"],
                       __import__("settings_archive").read(files)[0])
-        self.assertEqual(pkgs[0].files(version), pkgs[0].files("104956.Halloween"))
+        base = "104956.Halloween" + ("." + version.split(".")[-1]
+                                     if version.split(".")[-1].startswith("L") else "")
+        self.assertEqual(pkgs[0].files(version), pkgs[0].files(base))
 
 
     def test_client_exe_and_crc_lists(self):
         import patcher, zlib
+        self.addCleanup(setattr, patcher, "WASD_DLL", patcher.WASD_DLL)
+        patcher.WASD_DLL = None  # exe only (the WASD case: KeybindPanelTest)
         with tempfile.TemporaryDirectory() as d:
             exe = os.path.join(d, "mq.exe")
             with open(exe, "wb") as f:
@@ -543,7 +1072,9 @@ class BalanceTest(unittest.TestCase):
         self.assertEqual(after, before + "." + balance.client_version())
         files_on = patcher._data_bin_files(after)[patcher.SETTINGS_BIN]
         files_off = patcher._data_bin_files(before)[patcher.SETTINGS_BIN]
-        self.assertEqual(files_off, patcher._settings_bin(""))
+        # ohne Balancing: Original bzw. Level-60-Stand (level60.py)
+        self.assertEqual(files_off, patcher._settings_bin(
+            "", patcher.level60.rules_crc() if patcher.level60.ENABLED else ""))
         content = settings_archive.read(files_on)[0]
         i = content.index(balance.MINE_FILE)
         self.assertIn(b'"ProductionPeriod":"1h"', content[i:i + 3000])
@@ -554,7 +1085,8 @@ class BalanceTest(unittest.TestCase):
         o = content.index(balance.OBJECTIVE_FILE)
         text = content[o:content.index(b"\x00", o + len(balance.OBJECTIVE_FILE))]
         blings = re.findall(rb'"PremiumCash",\s*"Amount":(\d+)', text)
-        self.assertEqual(blings, [b"200"] * 7 + [b"150"])
+        self.assertEqual(blings, [b"200"] * 7 + [b"150"]
+                         + ([b"250"] if patcher.level60.ENABLED else []))  # 105 Goldmaw
         self.assertEqual(objectives.rewards(304)[0]["PremiumCash"], 150)
         o = content.index(balance.LEAGUE_FILE)
         text = content[o:content.index(b"\x00", o + len(balance.LEAGUE_FILE))]
@@ -682,6 +1214,45 @@ class ShieldTest(unittest.TestCase):
             self.assertEqual(out[0], ("ShieldExpired", {"ExpirableId": first}))
             shields = [x for x in s.account["Expirables"] if x["ExpirableType"] == "ShieldEnd"]
             self.assertEqual([x["Id"] for x in shields], [s.account["BuildInfo"]["ShieldEndExpirableId"]])
+
+
+class InventorySortTest(unittest.TestCase):
+    """v1.5: Sort under the inventory grid (ingame_market.Market._sort_key,
+    AccountState.sort_inventory_tab); effect texts for the item info box."""
+
+    def test_sort_tab_quality_and_reverse(self):
+        import ingame_market
+        cat = ingame_market.Catalog()
+        ex = ingame_market.Market.__new__(ingame_market.Market)
+        ex.catalog = cat
+        T = castles.T
+        with tempfile.TemporaryDirectory() as d:
+            s = account_state.AccountState(os.path.join(d, "a.json"), log=lambda m: None, profile="new")
+            tid = next(iter(cat.data.templates))
+            inv = s.account["Inventory"]
+            inv["InventoryTabCount"] = 2
+            inv["HeroItems"] = [x for x in inv["HeroItems"] if x["SlotIndex"] >= 42]
+            effects = {0: [], 1: [{"Id": 26, "Level": 3}], 2: [{"Id": 26, "Level": 3}] * 2,
+                       3: [{"Id": 26, "Level": 3}] * 3}
+            for slot, n in ((25, 0), (30, 3), (22, 1), (40, 2)):   # tab 2 (index 1)
+                s._put_slot(slot, {"$type": T("HeroEquipmentItem"), "TemplateId": tid, "ItemLevel": 5,
+                                   "Effects": effects[n]})
+            s._put_slot(3, {"$type": T("HeroEquipmentItem"), "TemplateId": tid, "ItemLevel": 5, "Effects": []})
+            events = s.sort_inventory_tab(1, ex._sort_key("quality", False))
+            self.assertEqual(events, [(s.FORCE_RELOAD, {})])
+            tab = sorted((x for x in inv["HeroItems"] if 21 <= x["SlotIndex"] < 42), key=lambda x: x["SlotIndex"])
+            self.assertEqual([x["SlotIndex"] for x in tab], [21, 22, 23, 24])        # packed from the first slot
+            self.assertEqual([len(x["Item"]["Effects"]) for x in tab], [3, 2, 1, 0])  # best quality first
+            self.assertIn(3, [x["SlotIndex"] for x in inv["HeroItems"]])             # other tabs untouched
+            s.sort_inventory_tab(1, ex._sort_key("quality", True))                   # same sort again: reversed
+            tab = sorted((x for x in inv["HeroItems"] if 21 <= x["SlotIndex"] < 42), key=lambda x: x["SlotIndex"])
+            self.assertEqual([len(x["Item"]["Effects"]) for x in tab], [0, 1, 2, 3])
+            self.assertEqual(s.sort_inventory_tab(1, ex._sort_key("quality", True)), [])  # nothing moved
+            with self.assertRaises(ValueError):
+                s.sort_inventory_tab(2, ex._sort_key("type", False))                 # tab not unlocked
+        d = cat.describe_item({"TemplateId": tid, "ItemLevel": 5, "Effects": [{"Id": 26, "Level": 3}]})
+        self.assertEqual(d["EffectInfo"][0]["Name"], "Magic Find III")
+        self.assertIn("+10%", d["EffectInfo"][0]["Text"])                           # 0.04 + 0.02 x 3
 
 
 class MaterialMineTest(unittest.TestCase):
@@ -844,6 +1415,202 @@ class BoostTest(unittest.TestCase):
             self.assertEqual([n for n, _ in s.events],
                              ["HeroInventoryRemoved", "ConsumableActivated", "ExpirableAdded"])
             self.assertNotIn(7, s._occupied())
+
+
+class FeatureTest20261122(unittest.TestCase):
+    """2026-11-22: All Heroes Pack, country from IP, friends online, yearly
+    community events, 2015 UI as patch base."""
+
+    def _state(self, d):
+        return account_state.AccountState(os.path.join(d, "a.json"), log=lambda m: None,
+                                          profile="new")
+
+    def test_hero_pack_price_and_buy(self):
+        self.addCleanup(balance.load, balance._path or "")
+        balance._data["Values"]["Enabled"] = True
+        self.assertEqual(balance.hero_pack_price([950, 950, 950]), 2000)  # 70 % of 2,850
+        self.assertEqual(balance.hero_pack_price([950, 950]), 1350)
+        self.assertEqual(balance.hero_pack_price([950]), 0)  # one hero: buy it in the game
+        with tempfile.TemporaryDirectory() as d:
+            s = self._state(d)
+            keep = [s._new_hero(3)]  # the free starting hero (Archer)
+            s.account["Heroes"] = keep
+            missing = s.missing_heroes()
+            self.assertEqual(len(missing), 3)
+            self.assertNotIn(keep[0]["HeroSpecContainerId"], [h for h, _ in missing])
+            price, text = bling_shop.hero_pack(missing)
+            self.assertEqual(price, 2000)
+            s.account["Wallet"]["PremiumCash"] = 1999
+            self.assertEqual(s.buy_hero_pack(price), "blings")
+            s.account["Wallet"]["PremiumCash"] = 2500
+            self.assertEqual(s.buy_hero_pack(price), "ok")
+            self.assertEqual(s.account["Wallet"]["PremiumCash"], 500)
+            self.assertEqual({h["HeroSpecContainerId"] for h in s.account["Heroes"]}, {2, 3, 4, 5})
+            names = [n for n, _ in s.take_pack_events()]
+            self.assertEqual(names, ["WalletUpdated"] + ["HeroUnlocked"] * 3)
+            self.assertEqual(s.missing_heroes(), [])
+            self.assertIsNone(bling_shop.hero_pack(s.missing_heroes()))
+            self.assertEqual(s.buy_hero_pack(price), "owned")
+            page = bling_shop.catalog_page("x", "tok", 0, [], "OrdinaryDay", "", (2000, text))
+            self.assertIn("All Heroes Pack", page)
+            self.assertNotIn("id=%d" % bling_shop.HERO_PACK_ID, page)  # 0 blings: no Buy
+            page = bling_shop.catalog_page("x", "tok", 5000, [], "OrdinaryDay", "", (2000, text))
+            self.assertIn("id=%d" % bling_shop.HERO_PACK_ID, page)
+
+    def test_country_follows_login_ip(self):
+        import geoip
+        self.assertIsNone(geoip.country("127.0.0.1"))  # local: keeps the stored country
+        with tempfile.TemporaryDirectory() as d:
+            s = self._state(d)
+            self.assertTrue(s.set_country("CA"))
+            self.assertFalse(s.set_country("CA"))
+            self.assertEqual(s.account["CountryCode"], "CA")
+            s.set_country("FR")
+            self.assertEqual(self._state(d).account["CountryCode"], "FR")  # saved
+
+    def test_friends_online(self):
+        import presence
+
+        class St:
+            def __init__(self, friends):
+                self.friends = friends
+
+            def snapshot(self):
+                return {"Friends": [{"Id": f} for f in self.friends]}
+
+        class P:
+            def __init__(self, aid, friends):
+                self.account_id, self.state = aid, St(friends)
+
+        me, on, off = P(1, [2, 3]), P(2, [1]), P(3, [1])
+        presence.note(me, "x", {}, "5.5.5.5")
+        presence.note(on, "x", {}, "6.6.6.6")
+        presence.note(off, "x", {}, "7.7.7.7")
+        off.presence_seen -= presence.ONLINE_S + 1
+
+        class Players:
+            players = {"me": me, "on": on, "off": off}
+        status, body = presence.friends_online(Players, 1, "5.5.5.5")
+        self.assertEqual((status, json.loads(body)), (200, {"2": True, "3": False}))
+        self.assertEqual(presence.friends_online(Players, 1, "9.9.9.9")[0], 403)  # other IP
+        self.assertEqual(presence.friends_online(Players, 1, "127.0.0.1")[0], 200)  # server PC
+        self.assertEqual(presence.friends_online(Players, 42, "5.5.5.5")[0], 403)
+
+    def test_community_event_calendar(self):
+        import community_events as ce
+        utc = datetime.timezone.utc
+        start, end = ce.boost_window(2026, 11)
+        self.assertEqual((ce.iso(start), ce.iso(end)), ("2026-11-20T17:00:00Z", "2026-11-23T05:00:00Z"))
+        self.assertEqual(start.weekday(), 4)  # Friday
+        e = ce.boost_event(datetime.datetime(2026, 11, 21, 12, tzinfo=utc))
+        self.assertEqual(e["Ids"], [25])  # November: bling mine
+        self.assertEqual(ce.from_key(e["Key"]), e)
+        self.assertIsNone(ce.boost_event(datetime.datetime(2026, 11, 20, 16, tzinfo=utc)))
+        dec = ce.boost_event(datetime.datetime(2026, 12, 19, 12, tzinfo=utc))
+        self.assertEqual(dec["Ids"], list(ce.ROTATION))  # Everything x2
+        self.assertEqual(ce.attack_factors(datetime.datetime(2026, 12, 19, 12, tzinfo=utc)),
+                         {"Gold": 1, "LifeForce": 1, "Xp": 1, "MagicFind": 1})
+        self.assertEqual(ce.mine_factor(16, datetime.datetime(2026, 11, 21, tzinfo=utc)), 2)
+        self.assertEqual(ce.mine_factor(5, datetime.datetime(2026, 11, 21, tzinfo=utc)), 1)
+        self.assertTrue(ce.more_materials(datetime.datetime(2027, 8, 1, tzinfo=utc)))
+        self.assertFalse(ce.more_materials(datetime.datetime(2027, 10, 1, tzinfo=utc)))
+        self.assertEqual(len(ce.calendar(2027)), 13)
+
+    def test_patcher_ships_event_dates(self):
+        v = patcher.packages(datetime.date(2026, 12, 19))[0].version
+        self.assertRegex(v, r"\.E2026121800(\.|$)")
+        files = patcher._community_event_files(v)[patcher.SETTINGS2]
+        content = settings_archive.read(files)[0]
+        self.assertIn(b"2026-12-18T17:00:00Z", content)
+        v = patcher.packages(datetime.date(2026, 8, 1))[0].version
+        self.assertIn(".M2026", v)
+        self.assertIn(b"2026-07-01T10:00:00Z",
+                      settings_archive.read(patcher._community_event_files(v)[patcher.SETTINGS2])[0])
+        self.assertIsNotNone(patcher._data_bin_files(v))
+
+    def test_discord_event_announcer(self):
+        import discord_events as de
+        utc = datetime.timezone.utc
+        now = datetime.datetime(2026, 12, 19, 12, tzinfo=utc)
+        titles = [e[3] for e in de.running(now)]
+        self.assertIn("Everything x2 weekend", titles)
+        self.assertIn("Christmas", titles)
+        self.assertEqual(de.next_event(now)[3], "New Year")
+        sent = []
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "discord_webhook.json"), "w") as f:
+                json.dump({"url": "https://discord.com/api/webhooks/1/x"}, f)
+            a = de.Announcer(d, log=lambda m: None, send=lambda url, p, v=None: sent.append(p))
+            self.assertEqual(len(a.tick(now)), 2)
+            self.assertEqual(a.tick(now), [])  # once per event
+            self.assertEqual(de.Announcer(d, send=None).done, a.done)  # survives a restart
+            embed = sent[0]["embeds"][0]
+            self.assertEqual(sent[0]["username"], de.NAME)
+            self.assertTrue(embed["fields"][-1]["name"].startswith("Next event: "))
+            os.remove(os.path.join(d, "discord_webhook.json"))
+            self.assertEqual(de.Announcer(d, send=None).tick(now + datetime.timedelta(days=30)), [])
+        self.assertEqual(de.webhook_url(None) if not os.environ.get("MQEL_DISCORD_WEBHOOK") else "", "")
+
+    def test_discord_patch_notes(self):
+        import discord_patch_notes as dp
+        import news
+        secs = dp.sections(os.path.join(ROOT, "PATCH_NOTES.md"))
+        self.assertTrue(secs and all(not t.lower().startswith("next update") for _, t, _ in secs))
+        self.assertLessEqual(secs[0][0], secs[-1][0])  # oldest first
+        self.assertNotIn("Short version", "".join(b for _, _, b in secs))
+        calls = []
+        api = {"send": lambda u, p, v=None: calls.append(("send", p["embeds"][0]["title"])) or {"id": "77"},
+               "edit": lambda u, m, p: calls.append(("edit", m)),
+               "delete": lambda u, m: calls.append(("delete", m))}
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "discord_patch_webhook.json"), "w") as f:
+                json.dump({"url": "https://discord.com/api/webhooks/2/y"}, f)
+            self.addCleanup(os.environ.pop, "MQEL_DISCORD_PATCH_WEBHOOK", None)
+            os.environ.pop("MQEL_DISCORD_PATCH_WEBHOOK", None)
+            notifier = dp.NewsNotifier(d, log=lambda m: None, api=api)
+            n = news.News(os.path.join(d, "news.json"), notifier.handle)  # synchronous
+            item = n.save("New patch", "- one\n- two", "2026-11-22")
+            n.save("New patch (fixed)", "- one", "2026-11-22", item["Id"])
+            n.delete(item["Id"])
+            self.assertEqual(calls, [("send", "New patch"), ("edit", "77"), ("delete", "77")])
+            self.assertEqual(dp.NewsNotifier(d, api=api).ids, {})
+        payload = dp.message("T", "### Head\n\nline one\nline two", "2026-11-22")
+        self.assertIn("**Head**", payload["embeds"][0]["description"])
+        self.assertIn("line one line two", payload["embeds"][0]["description"])
+        self.assertEqual(payload["avatar_url"], __import__("discord_events").AVATAR)
+        # voice clip as multipart attachment
+        import discord_events as dev
+        with tempfile.TemporaryDirectory() as vd:
+            clip = os.path.join(vd, "line.ogg")
+            with open(clip, "wb") as f:
+                f.write(b"OggS-test")
+            body, ctype = dev.encode({"content": "x"}, clip)
+            self.assertTrue(ctype.startswith("multipart/form-data; boundary="))
+            self.assertIn(b'name="files[0]"; filename="cornelius.ogg"', body)
+            self.assertIn(b"OggS-test", body)
+            self.assertIn(b'"attachments"', body)
+            self.assertEqual(dev.encode({"content": "x"})[1], "application/json")
+        # random greeting from Cornelius' list, different over many posts
+        import discord_events as de
+        for mod, make in ((dp, lambda: dp.message("T", "x")),
+                          (de, lambda: de.event_message(de.running(
+                              datetime.datetime(2026, 12, 19, 12, tzinfo=datetime.timezone.utc))[0],
+                              datetime.datetime(2026, 12, 19, 12, tzinfo=datetime.timezone.utc)))):
+            self.assertGreaterEqual(len(mod.GREETINGS), 10)
+            descs = [make()["embeds"][0]["description"] for _ in range(60)]
+            seen = {next(g for g in mod.GREETINGS if d.startswith(g)) for d in descs}
+            self.assertGreater(len(seen), 3)
+
+    def test_ui_patches_use_2015_scripts(self):
+        import ui_patches
+        out = ui_patches.patched(ui_patches.pathlib.Path(ROOT, "client", "GameData"))
+        popup = out["Data/UI/Js/modules/attackSelection/CastleCompetitionPopUpModule.js"]
+        self.assertIn(b"getUbisoftCompetition", popup)  # 2015, not getChallenge (2014)
+        self.assertNotIn(b"getChallenge", popup)
+        friends = out["Data/UI/Js/modules/lobby/friendNotificationsModule.js"].decode()
+        self.assertIn("mqelFriendsOnline(a)", friends)
+        self.assertIn("/friends/online?a=", friends)
+        self.assertIn("#module-player-interaction-container{z-index:30}", friends)
 
 
 class LimitsTest(unittest.TestCase):

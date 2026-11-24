@@ -170,6 +170,8 @@ async function showPlayers() {
     {label: "Last online", get: a => when(a.LastSeenOnline)},
     {label: "Status", get: a => sanctionText(a.Sanction)},
     {label: "Cheat", get: a => cheatText(a.Cheat)},
+    {label: "Shared IP", get: a => a.SharedIp && a.SharedIp.length ? h("span", {class: "tag bad",
+      title: "Same IP as account(s) " + a.SharedIp.join(", ")}, a.SharedIp.length + " other account(s)") : ""},
   ];
   const render = () => {
     const q = search.value.trim().toLowerCase();
@@ -180,8 +182,32 @@ async function showPlayers() {
   search.addEventListener("input", render);
   render();
   main.replaceChildren(h("div", {class: "panel"},
-    h("h2", {}, `Players (${accounts.length})`), h("div", {class: "toolbar"}, search), body));
+    h("h2", {}, `Players (${accounts.length})`), h("div", {class: "toolbar"}, search,
+      h("button", {class: "btn", onclick: () => showWhitelist().catch(e => toast(e.message, false))}, "Multiple accounts")),
+    body));
   search.focus();
+}
+
+// Multiple accounts (iplog.py): only whitelisted IPs may register more than one account
+async function showWhitelist() {
+  const d = await api("GetIpWhitelist");
+  const area = h("textarea", {rows: 5, style: "width:100%;font-family:monospace"}, d.Whitelist.join("\n"));
+  document.getElementById("main").replaceChildren(h("div", {class: "panel"},
+    h("button", {class: "btn", onclick: () => showPlayers()}, "← Players"),
+    h("h2", {}, "Multiple accounts"),
+    h("p", {class: "muted"}, "Every login and game request records the player's IP (player page > IP addresses). " +
+      "A new account is refused when another account already played from the same IP, unless the IP is listed here. " +
+      "The server PC itself is always allowed. One IP per line."),
+    area,
+    h("div", {class: "form"}, h("button", {class: "btn primary", onclick: async () => {
+      try { await api("SetIpWhitelist", {ips: area.value.split(/\s+/).filter(Boolean)}); toast("Whitelist saved"); showWhitelist(); }
+      catch (e) { toast(e.message, false); }
+    }}, "Save")),
+    h("h2", {style: "margin-top:16px"}, "Refused registrations"),
+    d.Refused.length ? table([
+      {label: "Time", get: r => when(r.Time * 1000)}, {label: "Name tried", get: r => r.Name},
+      {label: "IP", get: r => r.Ip}, {label: "Existing accounts", get: r => r.Accounts.join(", ")}], d.Refused)
+      : h("p", {class: "muted"}, "None.")));
 }
 
 // Verdacht aus dem Tracking: CheatFailure (1401) und gesetzte ClientHackFlags (1402)
@@ -194,6 +220,22 @@ function cheatText(c) {
 function sanctionText(s) {
   if (!s) return "";
   return h("span", {class: "tag bad"}, s.Status === 2 ? "Banned" : "Suspended until " + when(s.Until));
+}
+
+// IP addresses of a player and the other accounts seen on them (iplog.py)
+function ipBox(id) {
+  const box = h("div", {}, h("p", {class: "muted"}, "Loading …"));
+  api("GetAccountIps", {accountId: id}).then(d => box.replaceChildren(d.Ips.length ? table([
+    {label: "IP", get: r => r.Ip},
+    {label: "First seen", get: r => when(r.First * 1000)}, {label: "Last seen", get: r => when(r.Last * 1000)},
+    {label: "Seen", num: true, get: r => fmt(r.Count)},
+    {label: "Other accounts on this IP", get: r => r.Others.length ? r.Others.map((o, i) => [i ? ", " : "",
+      h("a", {href: `#player/${o.Id}`, onclick: () => showPlayer(o.Id)}, o.Name)]).flat()
+      : h("span", {class: "muted"}, "none")},
+    {label: "", get: r => r.Whitelisted ? h("span", {class: "tag"}, "whitelisted") : ""}], d.Ips)
+    : h("p", {class: "muted"}, "No IP recorded yet (recorded from the next login or game request)."))
+  ).catch(e => box.replaceChildren(h("p", {class: "muted"}, e.message)));
+  return box;
 }
 
 async function showPlayer(id) {
@@ -364,7 +406,15 @@ async function showPlayer(id) {
           : " The account has no password: the player cannot log in until you set one."))) return;
         try { await api("UnlinkSteam", {accountId: id}); toast("Steam account unlinked, player logged out"); reload(); }
         catch (e) { toast(e.message, false); }
-      }}, "Unlink Steam")) : h("p", {class: "muted"}, "No Steam account linked."),
+      }}, "Unlink Steam")) : (() => {
+        const sid = h("input", {type: "text", inputmode: "numeric", placeholder: "SteamID64, e.g. 7656119…"});
+        return h("div", {class: "form"}, h("label", {}, "No Steam account linked. Link SteamID", sid),
+          h("button", {class: "btn", onclick: async () => {
+            try { await api("LinkSteam", {accountId: id, steamId: sid.value.trim()});
+              toast("Steam account linked, player logged out"); reload(); }
+            catch (e) { toast(e.message, false); }
+          }}, "Link Steam"));
+      })(),
     h("div", {class: "form"}, h("label", {}, "Password", pw),
       h("button", {class: "btn primary", onclick: async () => {
         try { await api("SetPassword", {accountId: id, password: pw.value});
@@ -376,6 +426,16 @@ async function showPlayer(id) {
           toast(d.Sessions ? "Player logged out" : "No active session"); }
         catch (e) { toast(e.message, false); }
       }}, "Log out")),
+    (() => {
+      const nm = h("input", {type: "text", maxlength: 16, value: a.DisplayName || ""});
+      return h("div", {class: "form"}, h("label", {}, "Castle name", nm),
+        h("button", {class: "btn", onclick: async () => {
+          if (!confirm(`Rename ${a.DisplayName || a.Login} to ${nm.value.trim()}? The player is logged out.`)) return;
+          try { await api("SetDisplayName", {accountId: id, displayName: nm.value.trim()});
+            toast("Name changed, player logged out"); reload(); }
+          catch (e) { toast(e.message, false); }
+        }}, "Rename"));
+    })(),
     h("div", {class: "form"}, h("span", {}, a.IsAdmin ? "Admin: may use this web tool." : "Not an admin."),
       h("button", {class: "btn", disabled: !a.HasPassword, onclick: async () => {
         if (!a.IsAdmin && !confirm(`Give ${a.Login} access to this web tool?`)) return;
@@ -401,6 +461,21 @@ async function showPlayer(id) {
           toast(`Cheat flags cleared (${d.Removed} entries)`); reload(); }
         catch (e) { toast(e.message, false); }
       }}, "Clear cheat flags")),
+    h("h2", {style: "margin-top:16px"}, "Purchases and economy"),
+    h("div", {class: "form"}, h("span", {class: "muted"}, "Removes the player's purchases and bling ledger (Purchases and Economy stats tabs), e.g. for a test account."),
+      h("button", {class: "btn", onclick: async () => {
+        if (!confirm(`Remove all purchase and economy records of ${a.DisplayName || a.Login}?`)) return;
+        try { const d = await api("ClearEconomyRecords", {accountId: id}); toast(`${d.Purchases} purchases, ${d.LedgerEntries} ledger entries removed`); }
+        catch (e) { toast(e.message, false); }
+      }}, "Clear records")),
+    h("h2", {style: "margin-top:16px"}, "Battle log"),
+    h("div", {class: "form"}, h("span", {class: "muted"}, "Empties the player's defend log (old entries, players that no longer exist)."),
+      h("button", {class: "btn", onclick: async () => {
+        if (!confirm(`Empty the battle log of ${a.DisplayName || a.Login}?`)) return;
+        try { const d = await api("ClearDefendLog", {accountId: id}); toast(`${d.Removed} entries removed`); }
+        catch (e) { toast(e.message, false); }
+      }}, "Empty battle log")),
+    h("h2", {style: "margin-top:16px"}, "IP addresses"), ipBox(id),
     h("h2", {style: "margin-top:16px"}, "Delete account"),
     h("div", {class: "form"},
       h("button", {class: "btn danger", disabled: a.Heroes.length > 0, onclick: async () => {
@@ -683,6 +758,7 @@ const BALANCE_KINDS = {
   ui: ["UI", "Players download the UI patch (small) at their next launcher start"],
 };
 const BALANCE_SECTIONS = {Mine: "Bling mine", Loot: "Rare bling loot (creatures)", Leagues: "Leagues", Competitions: "Competitions",
+                          HeroPack: "All Heroes Pack (bling shop)",
                           Shop: "Bling shop (pack prices)", Objectives: "Quests (one-time, shown by the client)",
                           Achievements: "Achievements (one-time, shown in the popup)"};
 const BALANCE_TOTALS = ["Objectives", "Achievements"];
@@ -780,7 +856,66 @@ async function showEcoStats(days = 7) {
       {label: "Balance", num: true, get: r => fmt(r.Balance)}],
       d.Players.sort((a, b) => sum(b.Earned) - sum(a.Earned)))),
     h("p", {class: "muted"}, "Play time counts while the game talks to the server (gaps up to 10 minutes). ",
-      "Bookings before this page existed have no source and show as \"other\"."));
+      "Bookings before this page existed have no source and show as \"other\"."),
+    ...(await marketPanels()));
+}
+
+// Pages for long tables: render(rows) is called with one page of `items`
+function paged(size, items, render) {
+  const box = h("div");
+  let page = 0;
+  const pages = Math.max(1, Math.ceil(items.length / size));
+  const draw = () => {
+    const nav = pages > 1 ? h("div", {class: "form", style: "margin-top:8px"},
+      h("button", {class: "btn", disabled: page === 0 || null, onclick: () => { page = 0; draw(); }}, "« First"),
+      h("button", {class: "btn", disabled: page === 0 || null, onclick: () => { page--; draw(); }}, "‹ Newer"),
+      h("span", {class: "muted"}, ` Page ${page + 1} of ${pages} (${items.length} rows) `),
+      h("button", {class: "btn", disabled: page >= pages - 1 || null, onclick: () => { page++; draw(); }}, "Older ›"),
+      h("button", {class: "btn", disabled: page >= pages - 1 || null, onclick: () => { page = pages - 1; draw(); }}, "Last »")) : "";
+    box.replaceChildren(render(items.slice(page * size, page * size + size)), nav);
+  };
+  draw();
+  return box;
+}
+
+// Ingame Market (ingame_market.py): log, open offers, collect boxes
+async function marketPanels() {
+  let g;
+  try { g = await api("GetMarket", {limit: 5000}); } catch (e) { return [h("div", {class: "panel"}, h("h2", {}, "Ingame Market"), h("p", {class: "muted"}, e.message))]; }
+  const cur = c => c === "bling" ? "blings" : c === "gold" ? "gold" : "";
+  const price = (n, c) => n ? `${fmt(n)} ${cur(c)}` : "";
+  const ts = t => when(t * 1000);
+  const player = (name, id) => id ? h("a", {href: `#player/${id}`, onclick: () => go("players", () => showPlayer(id))}, name || id) : "";
+  const money = o => Object.entries(o || {}).map(([c, n]) => `${fmt(n)} ${cur(c)}`).join(" · ") || "0";
+  return [
+    h("div", {class: "panel"}, h("h2", {}, "Ingame Market log"),
+      h("p", {}, `${fmt(g.Trades)} sales · volume ${money(g.Volume)} · fees ${money(g.Fees)}`),
+      g.Log.length ? paged(25, g.Log, rows => table([
+        {label: "Time", get: e => ts(e.Time)},
+        {label: "Event", get: e => e.Event},
+        {label: "Player", get: e => player(e.PlayerName, e.Player)},
+        {label: "Other", get: e => player(e.OtherName, e.Other)},
+        {label: "Item", get: e => e.Item},
+        {label: "Qty", num: true, get: e => e.Qty > 1 ? fmt(e.Qty) : ""},
+        {label: "Price", num: true, get: e => price(e.Price, e.Currency) + (e.Qty > 1 && e.Event !== "collected" ? " each" : "")},
+        {label: "Fee", num: true, get: e => price(e.Fee, e.Currency)},
+        {label: "Ref", get: e => e.Ref}], rows)) : h("p", {class: "muted"}, "No trades yet.")),
+    h("div", {class: "panel"}, h("h2", {}, `Open offers (${g.Listings.length + g.Orders.length})`),
+      g.Listings.length + g.Orders.length ? paged(15, [...g.Listings, ...g.Orders], rows => table([
+        {label: "Kind", get: x => x.Kind === "item" ? "auction" : x.Kind === "buyorder" ? "buy order" : "sell order"},
+        {label: "Player", get: x => x.Kind === "buyorder" ? player(x.Buyer, x.BuyerId) : player(x.Seller, x.SellerId)},
+        {label: "Item", get: x => x.Kind === "item" ? `${x.Name} (lvl ${x.Level} ${x.Quality})` : x.Name},
+        {label: "Qty", num: true, get: x => x.Qty ? fmt(x.Qty) : ""},
+        {label: "Price", num: true, get: x => x.Kind === "item"
+          ? (x.Bid ? `bid ${price(x.Bid, x.Currency)}` : `start ${price(x.StartPrice, x.Currency)}`) + (x.BuyNow ? ` · buy now ${price(x.BuyNow, x.Currency)}` : "")
+          : `${price(x.Price, x.Currency)} each`},
+        {label: "Ends", get: x => x.Ends ? ts(x.Ends) : ""}], rows)) : h("p", {class: "muted"}, "None.")),
+    h("div", {class: "panel"}, h("h2", {}, "Waiting in collect boxes"),
+      g.Boxes.length ? table([
+        {label: "Player", get: b => player(b.Name, b.AccountId)},
+        {label: "Items", num: true, get: b => fmt(b.Items)},
+        {label: "Gold", num: true, get: b => fmt(b.Gold)},
+        {label: "Blings", num: true, get: b => fmt(b.Blings)}], g.Boxes) : h("p", {class: "muted"}, "Empty."))];
 }
 
 // ---- Server ----------------------------------------------------------------
@@ -810,7 +945,31 @@ async function showServer() {
   document.getElementById("main").replaceChildren(
     h("div", {class: "panel"}, h("h2", {}, "Server"),
       h("button", {class: "btn", onclick: () => showServer().catch(e => toast(e.message, false))}, "Refresh"),
-      table([{label: "", get: x => x[0]}, {label: "", get: x => x[1]}], rows)));
+      table([{label: "", get: x => x[0]}, {label: "", get: x => x[1]}], rows)),
+    await updatePanel());
+}
+
+// Update countdown: every game shows it bottom right (player's local time)
+// and closes itself at 0; then all sessions end
+async function updatePanel() {
+  const n = (await api("GetNotice")).Notice || {};
+  const mins = h("input", {type: "number", min: 1, max: 1440, value: 5});
+  const msg = h("input", {class: "wide", placeholder: "Message (optional), e.g. New patch: Ingame Market"});
+  const left = n.At ? Math.max(0, Math.round((n.At * 1000 - Date.now()) / 1000)) : 0;
+  return h("div", {class: "panel"}, h("h2", {}, "Server update countdown"),
+    n.At ? h("p", {}, `Planned for ${new Date(n.At * 1000).toLocaleString()} (in ${Math.floor(left / 60)} min ${left % 60} s)`,
+        n.Message ? ` – ${n.Message}` : "")
+      : h("p", {class: "muted"}, "Nothing planned. Players see a countdown in the game and the game closes itself when it ends."),
+    h("div", {class: "form"}, h("label", {}, "Minutes", mins), h("label", {}, "Message", msg),
+      h("button", {class: "btn primary", onclick: async () => {
+        if (!confirm(`Close every game in ${mins.value} minutes?`)) return;
+        try { await api("ScheduleUpdate", {minutes: +mins.value, message: msg.value}); toast("Countdown started"); showServer(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Schedule update"),
+      n.At ? h("button", {class: "btn", onclick: async () => {
+        try { await api("CancelUpdate"); toast("Countdown cancelled"); showServer(); }
+        catch (e) { toast(e.message, false); }
+      }}, "Cancel") : ""));
 }
 
 // ---- Navigation ------------------------------------------------------------

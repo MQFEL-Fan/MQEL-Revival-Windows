@@ -15,6 +15,8 @@ import random
 import os
 
 import balance
+import raids
+import level60
 import loot
 import patcher
 import trophies
@@ -218,6 +220,12 @@ def load_pve_castles():
         _oasis_name(c)
         if _disabled(c) or c.get("Level") is None:
             continue
+        _clamp_building_ranks(c)
+        out.append(c)
+    # Level-60-Update: Burgen der Region 10 (Level 35-60, level60.py)
+    for c in level60.region_castles():
+        c = copy.deepcopy(c)
+        _oasis_name(c)
         _clamp_building_ranks(c)
         out.append(c)
     return out
@@ -464,6 +472,18 @@ def _fake_player(c):
     f["CountryCode"] = _COUNTRIES[src * 5 % len(_COUNTRIES)]
     f["LayoutId"] = 1  # einziges Spielerburg-Raster (CastleLayouts, 10x10)
     f["Rooms"] = rooms
+    # Region 10: Thronsaal stammt aus einer Bossburg (Black Dragon/Goldmaw);
+    # stattdessen ältere Regionsbosse reihum, Goldmaw nur in seiner Burg
+    if level60.ENABLED and level60.CASTLE_ID_BASE <= src < level60.BOSS_CASTLE_ID:
+        boss = level60.region_throne_boss(src)
+        bosses = set(level60.OLD_REGION_BOSSES) | {level60.GOLDMAW_ID}
+        for e in rooms[0].get("Creatures") or []:
+            if e["SpecContainerId"] in bosses:
+                e["SpecContainerId"] = boss
+        tiers = [t for t in f.get("CreatureTiers") or [] if t["SpecContainerId"] != boss]
+        tiers.append({"SpecContainerId": boss, "Specialization": 0,
+                      "Tier": level60._top_tier("Creatures", boss, c["Level"])})
+        f["CreatureTiers"] = tiers
     # Raumzahl einer Spielerburg begrenzt das Architektenbüro (Building 13,
     # Ranks MaxRooms 3..8; CastleCellGrid::CanSnapEntityToGrid, Fehlerbit
     # 0x200 CannotPlaceMoreRooms, nur bei Spielerburgen); Platz wie in der
@@ -474,10 +494,12 @@ def _fake_player(c):
     # Burgherz-Rang bestimmt die Baupunkte-Obergrenze (CastleHeart Ranks
     # MaxConstructionPoints 20..375), die der Client bei Spielerburgen
     # prüft (bei PVE nicht): höchster Rang, damit alle Kreaturen passen
+    # (Level-60-Update: mindestens das Burg-Level, höchstens der letzte Rang)
+    heart = max(30, min(c.get("Level", 30), len(building_ranks(1)) or 30))
     for r in rooms:
         for b in r.get("Buildings") or []:
             if b["SpecContainerId"] == 1:
-                b["Rank"] = 30
+                b["Rank"] = heart
     return f
 
 
@@ -761,7 +783,7 @@ def attack_regions():
 
 def attack_selection(max_per_level=10, completed_assignments=(), region_id=None,
                      reroll=0, friend_ids=(), own_id=None, competitions=None,
-                     validations=()):
+                     validations=(), hero_level=None):
     """Burgauswahl einer Angriffsregion (AttackAdvisorSettings):
     Friends zeigt die Burgen der Freunde (friend_ids), Competitions die
     Burgen der laufenden Wettbewerbe (competitions: {Burg-Id: Wettbewerbs-Id},
@@ -778,17 +800,37 @@ def attack_selection(max_per_level=10, completed_assignments=(), region_id=None,
     (AttackSelectionManager) getrennt in BossCastle; Bossburgen aller
     Regionen fehlen in der normalen Liste. Tutorial-Burgen bleiben drin, bis
     Assignment 150 sie ausblendet: der Client holt die Liste nach dem ersten
-    Tutorial-Angriff und richtet 150 auf Burg 3 darin aus."""
+    Tutorial-Angriff und richtet 150 auf Burg 3 darin aus. Die 3D-Auswahl
+    hat MAX_LEVEL_RINGS Ringe (VisualAttackSelectionSettings.CirclesRadius)
+    und setzt eine Gruppe auf Ring "Level - LevelMin" der Region; mehr
+    Level (Region 10: 35, 37, 40 ... 60) teilt _rings auf die Ringe auf
+    (Gruppen-Level LevelMin + Ring, die Burgen behalten ihr Level).
+    hero_level wird nicht mehr gebraucht."""
     region = attack_regions().get(region_id) or {}
     bosses = {r.get("BossCastleId") for r in attack_regions().values()} - {None, 0}
     hidden = {cid for aid in completed_assignments
               for cid in _hidden_by_assignment().get(aid, [])}
+    if region_id == raids.REGION_ID:
+        # co-op raids: the party's procedural castles, one ring per tier
+        by_level = {}
+        for ring, cs in raids.selection(own_id, hero_level).items():
+            for c in cs:
+                _clamp_building_ranks(c)
+            by_level[raids.CLIENT_LEVELS[0] + ring] = cs
+        boss = find_castle(raids.BOSS_ID)
+        return {"$type": T("AttackSelectionResult"), "BossCastle": castle_summary(boss) if boss else None,
+                "CastlesByLevel": [{"$type": T("AttackSelectionByLevelResult"),
+                                    "Castles": [dict(castle_summary(c), UbisoftCompetitionId=0, AttackType=0)
+                                                for c in cs], "Level": level}
+                                   for level, cs in sorted(by_level.items())]}
     if region.get("IsFriendRegion"):
         groups = [[c for c in (find_castle(i) for i in friend_ids) if c]]
     elif region.get("IsCompetitionRegion"):
         groups = [[c for c in (find_castle(i) for i in competitions or {}) if c]]
     else:
         lo, hi = region.get("LevelMin", 0), region.get("LevelMax", 10 ** 6)
+        if region_id == level60.REGION_ID and level60.ENABLED:
+            lo, hi = level60.REGION_LEVELS  # the client's LevelMax is lower
         groups = []
         if not region or region.get("ShowUbisoftCastle"):
             groups.append([[c for c in load_pve_castles() if c["AccountId"] not in hidden
@@ -817,6 +859,7 @@ def attack_selection(max_per_level=10, completed_assignments=(), region_id=None,
             if n < max_per_level:
                 by_level.setdefault(c["Level"], []).append(c)
                 level_counts[c["Level"]] = n + 1
+    by_level = _rings(by_level, region.get("LevelMin", 0))
     boss = region.get("BossCastleId") and find_castle(region["BossCastleId"])
     return {
         "$type": T("AttackSelectionResult"),
@@ -834,11 +877,31 @@ def attack_selection(max_per_level=10, completed_assignments=(), region_id=None,
     }
 
 
+MAX_LEVEL_RINGS = 5
+
+
+def _rings(by_level, level_min):
+    """by_level mit höchstens MAX_LEVEL_RINGS Gruppen: bei mehr Leveln
+    kommen aufeinanderfolgende Level in eine Gruppe mit dem Level
+    level_min + Ring (Position in der 3D-Auswahl)."""
+    levels = sorted(by_level)
+    if len(levels) <= MAX_LEVEL_RINGS:
+        return by_level
+    out = {}
+    for i, lv in enumerate(levels):
+        out.setdefault(level_min + i * MAX_LEVEL_RINGS // len(levels), []).extend(by_level[lv])
+    return out
+
+
 def find_castle(castle_id):
     """Burgdatei zur Id, auch Tutorial-Burgen (2, 3) ohne Level: die
     bekommen Level 1 (Neu-Account mit Level-1-Held). Ids ab
     FAKE_PLAYER_BASE sind Ersatzspieler-Burgen, Accounts echter Spieler
     deren veröffentlichte Burg."""
+    if raids.is_raid(castle_id):  # co-op raid: built for the requesting player
+        c = raids.castle(castle_id)
+        _clamp_building_ranks(c)
+        return c
     account = player_account(castle_id)
     if account is not None:
         return player_castle(account)
@@ -851,7 +914,11 @@ def find_castle(castle_id):
                 else None)
     path = _castle_paths().get(castle_id)
     if path is None:
-        return None
+        c = level60.find_region_castle(castle_id)
+        if c is not None:
+            _oasis_name(c)
+            _clamp_building_ranks(c)
+        return c
     with open(path, encoding="utf-8") as f:
         c = json.load(f)
     if _disabled(c):

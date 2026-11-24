@@ -66,6 +66,8 @@ STREAM_TO_RE = re.compile(r'''\bto\s*=\s*["']([^"']*)["']''')
 ROOMS = {}
 
 ROOMS_LOCK = threading.Lock()
+# Räume, denen ein Schreibender automatisch wieder beitritt (handle_message)
+LANGS_PREFIX = ("en-", "de-", "fr-", "es-", "pl-", "pt-", "ru-", "zh-", "it-")
 
 
 def _inner(stanza):
@@ -304,6 +306,18 @@ class Session:
             occ = ROOMS.get(room) or {}
             nick = occ.get(self, (None,))[0]
             targets = list(occ)
+        if nick is None and room.startswith(tuple(LANGS_PREFIX)) and "@conference." in room:
+            # Der Client schreibt in einen Raum, dem er (nach einem Neustart
+            # des Spielservers) nicht mehr beigetreten ist: sein Join kam nie
+            # an, Nachrichten verschwanden still (2026-11-22). Wieder
+            # aufnehmen, mit den Spielerdaten aus der Nachricht.
+            extra = re.sub(r"<body>.*?</body>|<bodyfiltered>.*?</bodyfiltered>", "",
+                           _inner(stanza), flags=re.S)
+            self.join_room(room, self.user, extra)
+            with ROOMS_LOCK:
+                occ = ROOMS.get(room) or {}
+                nick = occ.get(self, (None,))[0]
+                targets = list(occ)
         if nick is None:
             return
         # Sitzung beendet (Sperre, Abmeldung im Admin-Tool): nichts mehr senden

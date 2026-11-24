@@ -32,8 +32,21 @@ Pakete hier:
   GameUI (8): die UI-Patches aus ui_patches.py als ganze Dateien
     (.replace), Version 280139.U<CRC>.
 
-  GameBin (1, nur mit --client-exe) und die Prüfsummenlisten der
-    geänderten Pakete: s. CRC_LISTS.
+  GameBin (1, mit --client-exe und/oder WASD-Helfer) und die
+    Prüfsummenlisten der geänderten Pakete: s. CRC_LISTS.
+    WASD helper (tools/wasd/bin/xinput9_1_0.dll, docs/80-wasd-keybinds.md):
+    shipped in GameBin next to the exe while that file exists, version
+    280139.W<CRC> (exe + DLL). The launcher's ".replace" deletes the old file
+    first and fails if it's missing ("Cannot remove file"), ".new" fails if
+    the file exists ("should not exist", PublicLauncher 0x4e0ab1/0x4e0c97).
+    So the DLL comes as .new unless the installed GameBin is a .W version
+    (DLL installed by the patcher), then as .replace. It isn't in
+    GameBinCRC.json (the launcher ignores files without an entry).
+    Since 2026-11-21 the DLL is shipped as mqelwasd9_1.dll and the exe's
+    import of XINPUT9_1_0.dll points to that name (wasd_import): Wine/Proton
+    loads its own built-in xinput9_1_0.dll instead of one next to the exe,
+    so on Linux the helper never ran. Version 280139.V<CRC>; an older
+    xinput9_1_0.dll from a .W version stays unused.
 
 Die Login-Seite (LauncherWebSiteUrl) setzt die Cookies, die die Launcher-
 Oberfläche aus dem iframe liest (t = Spieler-Token, email,
@@ -53,7 +66,10 @@ import urllib.parse
 import zlib
 
 import balance
+import community_events
 import free_trials
+import level60
+import loot_filter
 import settings_archive
 import ui_patches
 from loot import ROOT, SETTINGS
@@ -83,6 +99,11 @@ CRC_LISTS = {GAME_BIN: (9, "crc/GameBinCRC.json"),        # GameCRC
 # per game_server.py --client-exe verteilte Spiel-Exe (gepatchte
 # MightyQuest_profile.exe); ohne bleibt GameBin unangetastet
 CLIENT_EXE = None
+# WASD movement helper, shipped with GameBin while the file exists
+WASD_DLL = os.path.join(ROOT, "tools", "wasd", "bin", "xinput9_1_0.dll")
+WASD_NAME = "mqelwasd9_1.dll"   # shipped name (no Wine built-in has it)
+WASD_IMPORT = b"XINPUT9_1_0.dll"  # the exe's import, renamed to WASD_NAME
+WASD_VERSION = ".V"               # ".W": older versions as xinput9_1_0.dll
 LAUNCHER_VERSION = "276072"  # version.PublicLauncher.txt
 PUBLICATION_LABEL = "0.36.1.34.0"
 
@@ -222,14 +243,22 @@ class Package:
     any_installed=True (nur bei replace) bekommt auch ein unbekannter Stand
     alle Dateien, z. B. eine ältere --client-exe."""
 
-    def __init__(self, rm_type, name, version, files, replace=False, any_installed=False):
+    def __init__(self, rm_type, name, version, files, replace=False, any_installed=False,
+                 new_unless=None):
         self.rm_type, self.name, self.version, self.files = rm_type, name, version, files
         self.replace, self.any_installed = replace, replace and any_installed
+        # {path: installed -> True if that installed version already has the
+        # file}: otherwise it comes as <path>.new instead of .replace
+        self.new_unless = new_unless or {}
 
     def installed_files(self, installed):
         """Dateien des installierten Stands; None = kein Patch möglich."""
         files = self.files(installed)
         return {} if files is None and self.any_installed else files
+
+    def _suffix(self, path, installed):
+        has = self.new_unless.get(path)
+        return ".new" if has is not None and not has(installed) else ".replace"
 
     @property
     def key(self):
@@ -245,8 +274,8 @@ class Package:
         if key not in _PATCHES:
             old, new = self.installed_files(installed), self.files(self.version)
             if self.replace:
-                files = tuple((path + ".replace", data) for path, data in sorted(new.items())
-                              if old.get(path) != data)
+                files = tuple((path + self._suffix(path, installed), data)
+                              for path, data in sorted(new.items()) if old.get(path) != data)
             else:
                 files = tuple((path + ".xdelta", vcdiff(old[path], data))
                               for path, data in sorted(new.items()))
@@ -262,13 +291,28 @@ def _read(path):
         return f.read()
 
 
+def _wasd_dll():
+    """Inhalt des WASD-Helfers, None = wird nicht verteilt."""
+    return _read(WASD_DLL) if WASD_DLL and os.path.isfile(WASD_DLL) else None
+
+
 def _game_bin_files(version):
-    """GameBin-Versionen: 280139 = Steam-Exe, 280139.X<CRC> = CLIENT_EXE."""
+    """GameBin-Versionen: 280139 = Steam-Exe, 280139.X<CRC> = CLIENT_EXE,
+    280139.V<CRC> = Exe (CLIENT_EXE oder Steam) + WASD-Helfer."""
+    steam_exe = os.path.join(BIN, "MightyQuest.exe")
     if version == GAME_VERSION:
-        return {"MightyQuest.exe": _read(os.path.join(BIN, "MightyQuest.exe"))}
-    if CLIENT_EXE and version == _game_version():
-        return {"MightyQuest.exe": _read(CLIENT_EXE)}
+        return {"MightyQuest.exe": _read(steam_exe)}
+    if (CLIENT_EXE or _wasd_dll()) and version == _game_version():
+        files = {"MightyQuest.exe": _client_exe()}
+        if _wasd_dll():
+            files[WASD_NAME] = _wasd_dll()
+        return files
     return None
+
+
+def _has_wasd(installed):
+    """Installierter GameBin-Stand mit WASD-Helfer (vom Patcher gebracht)."""
+    return installed.startswith(GAME_VERSION + WASD_VERSION)
 
 
 GAME_DATA = os.path.join(ROOT, "client", "GameData")
@@ -299,10 +343,43 @@ def _game_ui_files(version):
     return None
 
 
+@functools.lru_cache(maxsize=2)
+def _patched_exe(path, l60):
+    exe = _read(path)
+    if l60:
+        exe = level60.patch_exe(exe)
+    # hero loot filter (2026-11-24, loot_filter.py, docs/96-loot-filter.md):
+    # off unless the player ticks it in the Setting Mod panel (WASD helper)
+    return loot_filter.patch_exe(exe)
+
+
+def wasd_import(exe):
+    """exe whose import of XINPUT9_1_0.dll loads WASD_NAME (same length)
+    instead; unchanged if the import isn't found exactly once."""
+    new = WASD_NAME.encode()
+    assert len(new) == len(WASD_IMPORT)
+    at = exe.find(WASD_IMPORT + b"\x00")
+    if at < 0 or exe.find(WASD_IMPORT + b"\x00", at + 1) >= 0:
+        return exe
+    return exe[:at] + new + exe[at + len(new):]
+
+
+def _client_exe():
+    """Exe that players get (CLIENT_EXE or the Steam exe), with the
+    level-60 exe patch (level60.patch_exe) when the update is on and the
+    WASD import (wasd_import) when the helper is shipped."""
+    exe = _patched_exe(CLIENT_EXE or os.path.join(BIN, "MightyQuest.exe"), level60.ENABLED)
+    return wasd_import(exe) if _wasd_dll() else exe
+
+
 def _game_version():
+    dll = _wasd_dll()
+    if dll:
+        return "%s%s%08x" % (GAME_VERSION, WASD_VERSION,
+                             zlib.crc32(dll, zlib.crc32(_client_exe())))
     if not CLIENT_EXE:
         return GAME_VERSION
-    return "%s.X%08x" % (GAME_VERSION, zlib.crc32(_read(CLIENT_EXE)))
+    return "%s.X%08x" % (GAME_VERSION, zlib.crc32(_client_exe()))
 
 
 def crc_list(path, files):
@@ -326,7 +403,11 @@ def _crc_package(pkg):
 
     def files(version):
         data = pkg.files(version)
-        return None if data is None else {path: crc_list(path, data)}
+        if data is None:
+            return None
+        # the WASD helper and the room card files have no entry in the lists
+        return {path: crc_list(path, {k: v for k, v in data.items()
+                                      if k != WASD_NAME and k not in pkg.new_unless})}
     return Package(rm_type, pkg.name, pkg.version, files, replace=True,
                    any_installed=pkg.any_installed)
 
@@ -335,12 +416,22 @@ SETTINGS_BIN = "Data/GameplaySettings/settings.bin"
 
 
 @functools.lru_cache(maxsize=4)
-def _settings_bin(crc):
-    """settings.bin zum Balancing-Stand B<crc> (balance.py), "" = Original."""
+def _settings_bin(crc, l60=""):
+    """settings.bin zum Balancing-Stand B<crc> (balance.py), "" = Original;
+    l60 = Regel-CRC des Level-60-Updates (level60.py, Teil L<CRC>): erst die
+    Level-60-Dateien (geänderte und neue), dann das Balancing darauf."""
     original = _read(os.path.join(ROOT, "client", "GameData", *SETTINGS_BIN.split("/")))
-    if not crc:
+    if not crc and not l60:
         return original
-    return balance.settings_bin(original, balance.history(crc))
+    content = settings_archive.read(original)[0]
+    if l60:
+        edited, added = level60.edited_files(settings_archive.files(content), SETTINGS)
+        content = settings_archive.splice(content, edited)
+        if added:
+            content = settings_archive.add_files(content, added)
+    if crc:
+        content = balance.edit_content(content, balance.history(crc))
+    return settings_archive.repack(original, content)
 
 
 def _data_bin_files(version):
@@ -351,7 +442,22 @@ def _data_bin_files(version):
     parts = _version_parts(version)
     if parts is None:
         return None
-    return {"Bin/Boot.tsc": boot_tsc(parts[0]), SETTINGS_BIN: _settings_bin(parts[2])}
+    files = {"Bin/Boot.tsc": boot_tsc(parts[0]),
+             SETTINGS_BIN: _settings_bin(parts[2], parts[3])}
+    if level60.ENABLED or parts[3]:
+        # texts of the level-60 update (loose Oasis files, read by the client);
+        # originals for versions without L, so switching back restores them
+        files.update(_oasis_files(bool(parts[3])))
+    if parts[3]:
+        # picture of the craftable Goldmaw: the unused icon set "missflameo"
+        # (existing files, so .replace works; in DataBinCRC.json)
+        files.update(level60.dragon_icon_files(os.path.join(ROOT, "client", "GameData")))
+    return files
+
+
+@functools.lru_cache(maxsize=2)
+def _oasis_files(enabled):
+    return level60.oasis_text_files(enabled)
 
 
 # Saison-Gruppe -> Stichworte in InternalDescription der Shop-Artikel
@@ -381,19 +487,41 @@ def event_sku_codes(group):
 FREE_TRIAL_FILE = b"COMMUNITYEVENTSETTINGS\\COMMUNITYEVENTFREETRIALSETTINGS.JSON\x00"
 
 
+BOOST_FILE = b"COMMUNITYEVENTSETTINGS\\COMMUNITYEVENTBOOSTSETTINGS.JSON\x00"
+LOOT_FILE = b"COMMUNITYEVENTSETTINGS\\COMMUNITYEVENTLOOTSETTINGS.JSON\x00"
+
+
+def _replace_file(content, marker, text):
+    """(content with the JSON after `marker` replaced, its offset)."""
+    start = content.index(marker) + len(marker)
+    stop = content.index(b"\x00", start)
+    return content[:start] + text.encode() + content[stop:], start
+
+
 @functools.lru_cache(maxsize=8)
-def settings2(group, trial_id=None):
+def settings2(group, trial_id=None, boost_key=None, loot_year=None):
     """settings2.bin mit dem Saison-SkuCommunityEvent (Zeitfenster offen:
     das Paket gilt nur, solange das Event läuft; Ende vor 2038, der Client
-    rechnet die Zeiten in 32 Bit) und dem Helden-Trial `trial_id`
-    (free_trials.event_id) statt des Archer-Trials von 2015."""
+    rechnet die Zeiten in 32 Bit), dem Helden-Trial `trial_id`
+    (free_trials.event_id) statt des Archer-Trials von 2015, dem
+    Boost-Wochenende `boost_key` und "More Materials" im Jahr `loot_year`
+    (community_events)."""
     trial = free_trials.from_id(trial_id) if trial_id else None
     with open(os.path.join(ROOT, "client", "GameData", *SETTINGS2.split("/")), "rb") as f:
         blob = f.read()
     codes = event_sku_codes(group)
-    if not codes and not trial:
+    if not codes and not trial and not boost_key and not loot_year:
         return blob
     content = settings_archive.read(blob)[0][:-4]  # ohne CRC
+    first = len(content)
+    if boost_key:  # Boost-Wochenende (erste Datei des Archivs)
+        content, at = _replace_file(content, BOOST_FILE, community_events.boost_settings_json(
+            community_events.from_key(boost_key)))
+        first = min(first, at)
+    if loot_year:
+        content, at = _replace_file(content, LOOT_FILE,
+                                    community_events.loot_settings_json(loot_year))
+        first = min(first, at)
     end = content.rindex(b"\r\n    ]\r\n}\x00")  # Ende von SkuCommunityEvents
     if codes:
         entry = json.dumps({"SkuCodes": codes, "Id": EVENT_SKU_ID, "DebugName": group,
@@ -402,10 +530,9 @@ def settings2(group, trial_id=None):
         content = content[:end] + b",\r\n        " + entry.encode() + content[end:]
     start = end
     if trial:  # Datei-Inhalt "PFAD\0JSON\0" des Trials ersetzen
-        start = content.index(FREE_TRIAL_FILE) + len(FREE_TRIAL_FILE)
-        stop = content.index(b"\x00", start)
-        content = (content[:start] + free_trials.settings_json(trial).encode()
-                   + content[stop:])
+        content, start = _replace_file(content, FREE_TRIAL_FILE,
+                                       free_trials.settings_json(trial))
+    start = min(start, first)
     return settings_archive.replace_tail(blob, start, content[start:])
 
 
@@ -416,18 +543,28 @@ def _trial_version(trial):
 
 
 def _version_parts(version):
-    """(Saison-Gruppe, Trial-Event oder None, Balancing-CRC oder "") aus
-    104956[.<Gruppe>][.T<Id>][.B<CRC>]; None, wenn die Version nicht von
-    hier stammt oder der Balancing-Stand unbekannt ist."""
+    """(Saison-Gruppe, Trial-Event oder None, Balancing-CRC oder "",
+    Level-60-CRC oder "") aus 104956[.<Gruppe>][.T<Id>][.L<CRC>][.B<CRC>];
+    None, wenn die Version nicht von hier stammt oder der Balancing- bzw.
+    Level-60-Stand unbekannt ist."""
     base, *parts = version.split(".")
     if base != DATA_VERSION:
         return None
-    group, trial, crc = "OrdinaryDay", None, ""
+    group, trial, crc, l60 = "OrdinaryDay", None, "", ""
     for part in parts:
+        if LEVEL60_PART.fullmatch(part):
+            if part[1:] != level60.rules_crc():
+                return None  # älterer Level-60-Stand: Inhalt unbekannt
+            l60 = part[1:]
+            continue
         if part[:1] == "B" and len(part) == 9:
             if balance.history(part[1:]) is None:
                 return None
             crc = part[1:]
+            continue
+        if ROOM_ICONS.fullmatch(part):  # .R1/.R2 of 2026-11-21 (room card files)
+            continue
+        if EVENT_PART.fullmatch(part):  # .E<Boost>/.M<Jahr>: _event_parts
             continue
         if part[:1] == "T" and part[1:].isdigit():
             try:
@@ -436,7 +573,27 @@ def _version_parts(version):
                 return None
         else:
             group = part
-    return group, trial, crc
+    return group, trial, crc, l60
+
+
+LEVEL60_PART = re.compile(r"L[0-9a-f]{8}")
+EVENT_PART = re.compile(r"E\d{10}|M\d{4}")
+
+
+def _event_parts(version):
+    """(Boost-Schlüssel oder None, Jahr von "More Materials" oder None) aus
+    .E<Schlüssel>/.M<Jahr> (community_events); ValueError bei unbekanntem
+    Schlüssel."""
+    boost = loot = None
+    for part in version.split(".")[1:]:
+        if EVENT_PART.fullmatch(part):
+            if part[0] == "E":
+                community_events.from_key(int(part[1:]))
+                boost = int(part[1:])
+            else:
+                loot = int(part[1:])
+    return boost, loot
+ROOM_ICONS = re.compile(r"R\d+")
 
 
 def _community_event_files(version):
@@ -444,7 +601,11 @@ def _community_event_files(version):
     parts = _version_parts(version)
     if parts is None:
         return None
-    return {SETTINGS2: settings2(parts[0], parts[1] and parts[1]["Id"])}
+    try:
+        boost, loot_year = _event_parts(version)
+    except ValueError:
+        return None
+    return {SETTINGS2: settings2(parts[0], parts[1] and parts[1]["Id"], boost, loot_year)}
 
 
 def packages(today, forced_event=None):
@@ -453,15 +614,34 @@ def packages(today, forced_event=None):
     trial = free_trials.current(today)
     if trial:
         version += "." + _trial_version(trial)
+    # Community-Events (community_events): Boost-Wochenende, "More Materials"
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if today != datetime.date.today():  # Tests mit festem Datum: Mittag des Tages
+        now = datetime.datetime.combine(today, datetime.time(12, 0), datetime.timezone.utc)
+    boost = community_events.boost_event(now)
+    if boost:
+        version += ".E%d" % boost["Key"]
+    if community_events.more_materials(now):
+        version += ".M%d" % now.year
+    if level60.ENABLED:
+        version += ".L" + level60.rules_crc()
     if balance.client_version():
         version += "." + balance.client_version()
     # beide Pakete mit derselben Version: unterschiedliche Datenstände
     # lassen den Launcher reparieren (und an der getauschten Exe abstürzen)
-    pkgs = [Package(DATA_BIN, "", version, _data_bin_files),
-            Package(COMMUNITY_EVENT_SETTINGS, "", version, _community_event_files)]
-    if CLIENT_EXE:
+    # whole files (.replace), also over unknown installed versions: an
+    # older level-60 data version (L<other CRC>) can't be the base of a
+    # delta, and without a patch the client kept the old data
+    # (2026-11-21 versions .R1/.R2 also shipped room card files: the game
+    # doesn't read them, they stay unused in old installs)
+    pkgs = [Package(DATA_BIN, "", version, _data_bin_files, replace=True,
+                    any_installed=level60.ENABLED),
+            Package(COMMUNITY_EVENT_SETTINGS, "", version, _community_event_files,
+                    replace=True, any_installed=level60.ENABLED)]
+    if CLIENT_EXE or _wasd_dll():
         pkgs.append(Package(GAME_BIN, "", _game_version(), _game_bin_files, replace=True,
-                            any_installed=True))  # auch ältere --client-exe
+                            any_installed=True,  # auch ältere --client-exe
+                            new_unless={WASD_NAME: _has_wasd}))
     pkgs = pkgs + [_crc_package(p) for p in pkgs]
     # UI-Patches (ohne Prüfsummenliste: GameUI prüft der Launcher nicht)
     return pkgs + [Package(GAME_UI, "", _ui_version(), _game_ui_files, replace=True)]
@@ -503,6 +683,20 @@ def server_packages(client, base_url, today, machine=1, forced_event=None):
                                  forced_event)["RMServerPackagesVersion"]
 
 
+# per game_server.py --keep-unknown-versions: fremde installierte Stände
+# (Client, den ein anderer Server gepatcht hat) unverändert lassen
+KEEP_UNKNOWN_VERSIONS = False
+
+
+def _unknown(pkg, installed):
+    """Installierter Stand, den dieser Server nicht selbst erzeugt hat.
+    Pakete mit any_installed (--client-exe) ersetzen jeden Stand."""
+    if pkg.any_installed:
+        return False
+    files = pkg.files(installed)
+    return files is None or (pkg.replace and not files)
+
+
 def launcher_and_packages(client, base_url, today, machine=1, forced_event=None):
     """RMLauncherAndServerPackagesVersion: Launcher aktuell; je Paket
     aktuell, nur Versionsnummer eintragen (Dateien schon richtig) oder
@@ -511,8 +705,21 @@ def launcher_and_packages(client, base_url, today, machine=1, forced_event=None)
     patches = []
     for pkg in packages(today, forced_event):
         installed = have.get(pkg.key)
-        if installed is None or pkg.installed_files(installed) is None:
-            continue  # nicht installiert oder unbekannter Stand: nichts tun
+        if installed is None:
+            continue  # nicht installiert: nichts tun
+        if KEEP_UNKNOWN_VERSIONS and installed != pkg.version and _unknown(pkg, installed):
+            # Stand eines anderen Servers (z. B. themightyquest-reborn.com):
+            # als aktuell melden statt patchen. Ein Patch löst danach
+            # TaskRepair aus, das an der fremden Exe/CRC-Liste hängen bleibt
+            # ("Checking Game Packages Version ...").
+            patches.append({"$type": T("RMPackagePatch"), "FullDownloadSize": 0,
+                            "FullInstallUrl": "", "PatchDownloadSize": 0,
+                            "PatchInstallUrl": "", "RMPackagePatchFlags": UP_TO_DATE,
+                            "RMPackageVersion": dict(_version(pkg, machine),
+                                                     VersionName=installed)})
+            continue
+        if pkg.installed_files(installed) is None:
+            continue  # unbekannter Stand: nichts tun
         patch = {"$type": T("RMPackagePatch"), "FullDownloadSize": 0,
                  "FullInstallUrl": "", "PatchDownloadSize": 0, "PatchInstallUrl": "",
                  "RMPackagePatchFlags": UP_TO_DATE,
@@ -576,7 +783,15 @@ def login_page(name=None, news=""):
     (_onUserLoggedOut), damit Play nie für den alten Spieler aktiv bleibt."""
     return (LOGIN_PAGE.replace("@VALID@", "true" if name else "false")
             .replace("@NEWS@", NEWS_BOX % news if news else "")
-            .replace("@TEXTS@", json.dumps(LOGIN_TEXTS, ensure_ascii=False)))
+            .replace("@TEXTS@", json.dumps(LOGIN_TEXTS, ensure_ascii=False))
+            .replace("@PRIVACY@", privacy_url()))
+
+
+def privacy_url():
+    """Privacy policy on the project website (website/privacy.html)."""
+    host = os.environ.get("MQEL_PUBLIC_HOST", "").strip() or "127.0.0.1"
+    port = os.environ.get("MQEL_WEB_PORT", "").strip() or "8088"
+    return "http://%s:%s/privacy.html" % (host, port)
 
 
 # Sprachen des Spiels (GameplaySettings/Oasis/oasis_<code>.json) mit
@@ -693,6 +908,15 @@ _TEXTS["es-mx"] = _TEXTS["es"]
 PLAY_BUTTON = {"de": "Spielen", "fr": "Jouer", "pl": "Graj", "pt": "Jogar", "ru": "Играть"}
 LOGIN_TEXTS = {"languages": LANGUAGES, "play": PLAY_BUTTON,
                "texts": {code: dict(zip(_TEXT_KEYS, t)) for code, t in _TEXTS.items()}}
+# multiple accounts (iplog.py): one account per connection unless allowed
+_MULTI = {"en": "An account already plays from this internet connection. One account per player; "
+                "ask an admin if you need another one.",
+          "de": "Von dieser Internetverbindung spielt schon ein Account. Ein Account pro Spieler; "
+                "frag einen Admin, wenn du einen weiteren brauchst.",
+          "fr": "Un compte joue déjà depuis cette connexion. Un compte par joueur ; "
+                "demande à un admin si tu en as besoin d'un autre."}
+for _code, _t in LOGIN_TEXTS["texts"].items():
+    _t["multi_account"] = _MULTI.get(_code, _MULTI["en"])
 
 NEWS_BOX = ('<div id="news"><div id="nav"><a onclick="page(-1)">&#8249;</a>'
             '<span id="pg"></span><a onclick="page(1)">&#8250;</a></div>'
@@ -725,7 +949,7 @@ background:#5865f2;color:#fff;font-size:14px;text-decoration:none}
 #nav a:hover{background:rgba(255,255,255,.15)} #pg{display:inline-block;min-width:38px;text-align:center}
 </style></head><body>
 <div id="col"><div id="box">
-<div id="lang"><a id="discord" href="https://discord.gg/yACsX6HY98" target="_blank">Discord</a><select id="sel" onchange="setLang(this.value)" aria-label="Language"></select></div>
+<div id="lang"><a id="discord" href="https://discord.gg/hxFANB2kky" target="_blank">Discord</a><select id="sel" onchange="setLang(this.value)" aria-label="Language"></select></div>
 <div id="f">
 <label for="name" data-t="name"></label><input id="name" autocomplete="username" onkeydown="enter(event)">
 <label for="pw" data-t="password"></label><input id="pw" type="password" autocomplete="current-password" onkeydown="enter(event)">
@@ -736,6 +960,7 @@ background:#5865f2;color:#fff;font-size:14px;text-decoration:none}
 <div id="in" style="display:none"><p id="who"></p><p id="play"></p>
 <button type="button" onclick="logout()" data-t="logout"></button></div>
 <div id="err"></div>
+<p style="font-size:11px;color:#aaa;margin:10px 0 0">By logging in or playing you agree to our <a href="@PRIVACY@" target="_blank" style="color:#f2b632">privacy policy</a>.</p>
 <form id="sf" method="post" action="/launcher/steam" target="sfr" style="display:none"></form>
 <iframe name="sfr" style="display:none"></iframe>
 </div>
@@ -784,7 +1009,11 @@ document.getElementById("sf").dispatchEvent(e);}
 function steamNew(){if(busy||!proof)return;busy=true;err();
 post("steamnew",{proof:proof},function(r){busy=false;
 if(r.Error){err(r.Error);return;}login(r.Token,r.Name);},function(){busy=false;err("unreachable");});}
-if(!get("t"))setTimeout(steamTry,800);
+// Cookie erst nach 0,8 s prüfen: weiter unten löscht die Seite ein
+// ungültiges Cookie t (valid=false). Vorher geprüft, unterblieb die
+// Steam-Anmeldung bei abgelaufenem Token, und erst der zweite Start
+// (ohne Cookie) meldete per Steam an
+setTimeout(function(){if(!get("t"))steamTry();},800);
 function login(t,n){var was=window.userIsLoggedIn;
 set("t",t,365);set("n",n,365);set("email",n+"@mqel.local",365);set("hyperquest_launcher_session",t,365);
 try{if(was&&parent._launcher){parent._launcher._onUserLoggedIn(JSON.stringify(

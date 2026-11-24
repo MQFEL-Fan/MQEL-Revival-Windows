@@ -58,3 +58,35 @@ a.card:hover{border-color:var(--gold)}
 .more{color:var(--gold2);font-size:14px;margin-top:8px;display:block}
 
 tr:last-child td{border-bottom:none}
+.card .hint{margin-top:10px;font-size:14px;color:var(--muted)}
+.card .badge{margin-bottom:8px}
+
+/* patch notes page (patch-notes.html): one note per slide */
+.grid.one{grid-template-columns:1fr;max-width:760px;margin:0 auto}
+.card p+p{margin-top:10px}
+.notes-page{padding-top:40px}
+.slider{max-width:760px;margin:0 auto}
+.slider-bar,.dots{display:none}
+.slider.on .slider-bar{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px}
+.slider.on .dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px}
+.slider .nav{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--gold2);font-size:26px;line-height:1;cursor:pointer}
+.slider .nav:disabled{opacity:.35;cursor:default}
+.slider .nav:not(:disabled):hover{border-color:var(--gold)}
+.slider .count{color:var(--muted);font-size:14px;min-width:60px;text-align:center}
+.viewport{overflow:visible}
+.slider.on .viewport{overflow:hidden;transition:height .3s ease}
+.track .slide{margin-bottom:16px}
+.slider.on .track{display:flex;align-items:flex-start;transition:transform .35s ease}
+.slider.on .track .slide{flex:0 0 100%;margin:0}
+.dots button{width:10px;height:10px;border-radius:50%;border:0;padding:0;background:var(--line);cursor:pointer}
+.dots button.on{background:var(--gold)}
+.toc{max-width:760px;margin:28px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 20px}
+.toc summary{cursor:pointer;color:var(--gold2);font-weight:600}
+.toc ol{list-style:none;margin:10px 0 0;padding:0}
+.toc li a{display:flex;gap:12px;padding:6px 0;color:var(--text);text-decoration:none;border-top:1px solid var(--line)}
+.toc li:first-child a{border-top:0}
+.toc li a span{color:var(--muted);font-size:13px;min-width:92px}
+.toc li a:hover{color:var(--gold2)}
+
+footer .privacy-link{display:inline-block;margin-left:6px;padding:4px 12px;border-radius:999px;border:1px solid rgba(242,182,50,.6);color:#f2b632;text-decoration:none;font-weight:600}
+footer .privacy-link:hover{background:rgba(242,182,50,.15)}

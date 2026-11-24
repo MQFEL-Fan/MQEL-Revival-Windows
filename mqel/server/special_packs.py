@@ -21,6 +21,7 @@ import json
 import os
 
 import balance
+import level60
 import loot
 
 # Shop-Artikel ohne Pack mit eigenem Kontingent (im Original 1, hier bis zur
@@ -96,6 +97,15 @@ def modifiers(pack_ids, castle_level, consumed, level_packs=None):
         per_level(p.get("PerLevelShopSkus", {}))
     per_level(level_packs or {})
     for code, quota in SHOP_QUOTAS.items():
-        mod(code)["LimitedQuantityMax"] += quota
+        m = mod(code)
+        m["LimitedQuantityMax"] += quota
+        # Level-60-Update: one more bling mine with castle heart 35 and 55
+        if code == balance.BLING_MINE_SKU and level60.ENABLED:
+            for heart in level60.MINE_INSTANCE_HEARTS:
+                if heart <= castle_level:
+                    m["LimitedQuantityMax"] += 1
+                elif not m["LimitedQuantityNextUnlockCastleLevelRequirement"]:
+                    m["LimitedQuantityNextUnlockCastleLevelRequirement"] = heart
+                    m["LimitedQuantityNextUnlockQuantity"] = 1
     return list(out.values())
 

@@ -1,0 +1,147 @@
+<!-- MQEL lobby mods (ui_patches.py, patch 19; v1.5, docs/97-inventory-sort-orbs.md):
+     * health and mana orbs show "current / max" in white bold (read from the
+       game's own orb tooltip, #modules-hudBar-attackHUD .health-gauge /
+       .mana-gauge data-tooltip, so it follows every update of the game)
+     * "Sort" button under the inventory grid (floating, follows the grid;
+       v1.5.1: inside .sell-container the game's CSS hid it): sorts the open inventory tab on the
+       server (Ingame Market web token, POST /market/sort_inventory), the game
+       reloads the bag. Picking the same sort again reverses it.
+     MQEL_LOBBY_URLS is replaced by the server addresses. ES5 only (Chromium 2015). -->
+<style>
+.mqel-orb-num{position:fixed;z-index:2147480900;pointer-events:none;color:#fff;font-weight:bold;text-align:center;white-space:nowrap;
+  text-shadow:0 0 3px #000,0 0 3px #000,1px 1px 2px #000;font-family:Verdana,Arial,sans-serif;display:none;line-height:1}
+.mqel-orb-num .c{display:block;font-size:16px}
+.mqel-orb-num .m{display:block;font-size:11px;margin-top:2px;opacity:.9}
+.mqel-inv-sort{position:fixed;z-index:2147480950;display:none;font-family:Verdana,Arial,sans-serif;font-size:12px;color:#bfe1ee}
+.mqel-inv-sort .b{display:block;width:118px;height:24px;line-height:22px;box-sizing:border-box;border:2px solid #0a2633;border-radius:5px;background:#14607f;
+  box-shadow:inset 0 -3px 0 #0c4560;color:#f6c344;font-weight:bold;font-size:12px;letter-spacing:1px;text-align:center;text-transform:uppercase;cursor:pointer;position:relative}
+.mqel-inv-sort .b:hover{background:#1b7aa1}
+.mqel-inv-sort .b:after{content:"";position:absolute;right:8px;top:6px;border:4px solid transparent;border-bottom-color:#f6c344}
+.mqel-inv-sort .l{display:none;position:absolute;left:0;bottom:100%;margin-bottom:3px;min-width:190px;background:#062433;border:1px solid #2a89ad;border-radius:4px;box-shadow:0 -3px 10px #000}
+.mqel-inv-sort.open .l{display:block}
+.mqel-inv-sort .l a{display:block;padding:5px 9px;color:#fff;cursor:pointer;white-space:nowrap}
+.mqel-inv-sort .l a:hover{background:#14607f}.mqel-inv-sort .l a.on{color:#f6c344;font-weight:bold}
+.mqel-inv-sort .l .hint{padding:4px 9px;color:#7fa7b8;font-size:10px;border-top:1px solid #0c4560;white-space:nowrap}
+.mqel-inv-sort .msg{display:none;position:absolute;left:126px;top:2px;padding:3px 8px;background:rgba(6,36,51,.95);border:1px solid #2a89ad;border-radius:4px;color:#fff;white-space:nowrap}
+</style>
+<div class="mqel-orb-num" id="mqel-orb-hp"></div>
+<div class="mqel-orb-num" id="mqel-orb-mp"></div>
+<script type="text/javascript">
+(function(){
+var BASES=MQEL_LOBBY_URLS,base=null,w=null;
+function $id(i){return document.getElementById(i);}
+function req(method,path,body,done,i){
+  var list=base?[base]:BASES;i=i||0;if(i>=list.length){done(0,{});return;}
+  var x=new XMLHttpRequest(),fin=false,t=setTimeout(function(){try{x.abort();}catch(e){}},8000);
+  x.onreadystatechange=function(){if(x.readyState!=4||fin)return;fin=true;clearTimeout(t);
+    var ours=false;try{ours=!!x.getResponseHeader("X-MQEL");}catch(e){}
+    if(!base&&(x.status===0||!ours)){req(method,path,body,done,i+1);return;}
+    if(x.status)base=base||list[i];var d={};try{d=JSON.parse(x.responseText||"{}");}catch(e){}done(x.status,d);};
+  try{x.open(method,list[i]+path,true);if(body!=null)x.setRequestHeader("Content-Type","text/plain");x.send(body!=null?JSON.stringify(body):null);}
+  catch(e){fin=true;clearTimeout(t);if(!base)req(method,path,body,done,i+1);else done(0,{});}
+}
+function session(done){
+  var id=window.hyperquest&&hyperquest.cache&&hyperquest.cache.AccountId;
+  if(!id){done(false);return;}
+  req("GET","/market/session?a="+id,null,function(s,d){w=s==200&&d.w?d.w:null;done(!!w,d);});
+}
+function post(action,body,done){
+  var go=function(retry){body.w=w;
+    req("POST","/market/"+action,body,function(s,d){if((s==401||s==0)&&retry){base=null;session(function(ok){if(ok)go(false);else done(s,d);});return;}done(s,d);});};
+  if(!w)session(function(ok,d){if(ok)go(false);else done(403,d||{});});else go(true);
+}
+
+/* -- health / mana numbers in the orbs -- */
+/* The gauge div (146x145 with its frame) is the same element in the lobby and
+   in attacks; the orb itself is the inner ~68%. The label is fixed over its
+   centre, on top of the HUD, and shrinks until it fits the orb. */
+var last={hp:"",mp:""};
+function orb(sel,id,key){
+  var c=document.querySelector("#modules-hudBar-attackHUD "+sel),el=$id(id);
+  if(!el)return;
+  if(!c){el.style.display="none";return;}
+  var r=c.getBoundingClientRect(),m=/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/.exec(c.getAttribute("data-tooltip")||"");
+  var st=window.getComputedStyle(c);
+  if(!m||r.width<20||r.height<20||st.display=="none"||st.visibility=="hidden"){el.style.display="none";return;}
+  var txt=m[1]+"|"+m[2],size=Math.round(r.width*0.68),fs;
+  el.style.display="block";
+  if(txt!==last[key]||el._w!==size){
+    last[key]=txt;el._w=size;
+    el.innerHTML="<span class='c'>"+m[1]+"</span><span class='m'>/ "+m[2]+"</span>";
+    /* fit: start at 17% of the orb (max 18px), shrink until the widest line fits */
+    for(fs=Math.min(18,Math.round(size*0.17));fs>=8;fs--){
+      el.firstChild.style.fontSize=fs+"px";el.lastChild.style.fontSize=Math.max(7,Math.round(fs*0.72))+"px";
+      if(el.offsetWidth<=size*0.82)break;}
+  }
+  el.style.left=Math.round(r.left+r.width/2-el.offsetWidth/2)+"px";
+  el.style.top=Math.round(r.top+r.height/2-el.offsetHeight/2)+"px";
+}
+function orbs(){orb(".health-gauge","mqel-orb-hp","hp");orb(".mana-gauge","mqel-orb-mp","mp");}
+
+/* -- inventory sort -- */
+var SORTS=[["type","Type","Type (reversed)"],["quality","Quality: best first","Quality: lowest first"],["level","Level: high to low","Level: low to high"],["name","Name: A to Z","Name: Z to A"]];
+var cur={by:"",desc:false},busy=false;
+function label(by,desc){for(var i=0;i<SORTS.length;i++)if(SORTS[i][0]==by)return desc?SORTS[i][2]:SORTS[i][1];return "Sort";}
+function tabOf(mod){
+  /* open tab = lowest slot index shown in this grid / 21 slots per tab */
+  var s=mod.querySelectorAll(".inventory-grid [slot-index]"),i,v,lo=null;
+  for(i=0;i<s.length;i++){v=+s[i].getAttribute("slot-index");if(!isNaN(v)&&(lo===null||v<lo))lo=v;}
+  return lo===null?null:Math.floor(lo/21);
+}
+function listHtml(){
+  var h="",i,on;
+  for(i=0;i<SORTS.length;i++){on=cur.by==SORTS[i][0];
+    h+="<a data-by='"+SORTS[i][0]+"'"+(on?" class='on'":"")+">"+(on?label(SORTS[i][0],!cur.desc):SORTS[i][1])+"</a>";}
+  return h+"<div class='hint'>Sorts this tab. Pick it again to reverse.</div>";
+}
+function say(box,t){var m=box.querySelector(".msg");if(!m)return;m.innerHTML=t;m.style.display=t?"block":"none";clearTimeout(box._t);if(t)box._t=setTimeout(function(){m.style.display="none";},4000);}
+function onSort(box,by){
+  var mod=box.mqelMod,tab=tabOf(mod);box.className="mqel-inv-sort";
+  if(tab===null){say(box,"Open an inventory tab first.");return;}
+  if(busy)return;
+  if(cur.by==by)cur.desc=!cur.desc;else{cur.by=by;cur.desc=false;}
+  busy=true;say(box,"Sorting tab "+(tab+1)+"...");
+  post("sort_inventory",{tab:tab,by:by,desc:cur.desc?1:0},function(s,d){busy=false;
+    if(s==200)say(box,d.Reload?label(by,cur.desc)+": your bag reloads in a moment.":"Already sorted.");
+    else say(box,(d&&d.Error)||"The server can't be reached.");});
+}
+/* One floating SORT button per inventory grid that is really on screen
+   (not hidden, not covered by another window): at the left of the
+   "Drag here to sell items" row, under the grid. */
+function shown(mod,r){
+  if(r.width<80||r.height<40)return false;
+  var x=r.left+Math.min(30,r.width/2),y=r.top+Math.min(20,r.height/2),hit=document.elementFromPoint(x,y);
+  return !!hit&&mod.contains(hit);
+}
+function boxFor(mod){
+  if(mod.mqelSortBox)return mod.mqelSortBox;
+  var box=document.createElement("div");box.className="mqel-inv-sort";box.mqelMod=mod;
+  box.innerHTML="<span class='l'></span><a class='b'>Sort</a><span class='msg'></span>";
+  box.addEventListener("mousedown",function(ev){ev.stopPropagation();},false);
+  box.addEventListener("click",function(ev){
+    ev.preventDefault();ev.stopPropagation();
+    var t=ev.target,by=t.getAttribute&&t.getAttribute("data-by");
+    if(by){onSort(box,by);return;}
+    if(t.className=="b"){if(box.className.indexOf("open")<0){box.querySelector(".l").innerHTML=listHtml();box.className="mqel-inv-sort open";}else box.className="mqel-inv-sort";}
+  },false);
+  document.body.appendChild(box);mod.mqelSortBox=box;return box;
+}
+function attach(){
+  var mods=document.querySelectorAll(".inventory-grid-module"),i,mod,grid,sc,r,rs,box,top;
+  for(i=0;i<mods.length;i++){mod=mods[i];grid=mod.querySelector(".inventory-grid");if(!grid)continue;
+    r=grid.getBoundingClientRect();box=mod.mqelSortBox;
+    if(!shown(mod,r)){if(box&&box.className.indexOf("open")<0)box.style.display="none";continue;}
+    box=boxFor(mod);
+    sc=mod.querySelector(".sell-container");rs=sc?sc.getBoundingClientRect():null;
+    top=rs&&rs.height>10?rs.top+rs.height/2-12:r.bottom+8;
+    box.style.left=Math.round(r.left+2)+"px";box.style.top=Math.round(top)+"px";box.style.display="block";}
+}
+document.addEventListener("click",function(){var o=document.querySelectorAll(".mqel-inv-sort.open"),i;for(i=0;i<o.length;i++)o[i].className="mqel-inv-sort";},false);
+
+function init(){
+  setInterval(orbs,250);
+  setInterval(attach,250);attach();
+}
+if(document.readyState=="loading")document.addEventListener("DOMContentLoaded",init,false);else init();
+})();
+</script>

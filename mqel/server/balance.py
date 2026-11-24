@@ -17,6 +17,7 @@ import functools
 import json
 import os
 import re
+import struct
 import threading
 import zlib
 
@@ -30,7 +31,8 @@ ACHIEVEMENT_BLINGS_PER_POINT = 2  # Vorgabe: Punkte x 2 (zusammen ~1500)
 # Vorgaben für Objective-Blings (Original 50): Bosse und Heist höher, zusammen
 # 1550 statt 550 (ersetzt die gestrichenen Meilensteine)
 OBJECTIVE_BLINGS = {5: 200, 100: 200, 101: 200, 99: 200, 103: 200, 102: 200,
-                    104: 200, 304: 150}
+                    104: 200, 304: 150,
+                    105: 250}  # Goldmaw, Level-60-Update (level60.py)
 
 
 @functools.lru_cache(maxsize=None)
@@ -40,6 +42,9 @@ def achievements():
               encoding="utf-8-sig") as f:
         return [(a["Id"], a["DebugName"], a["Points"]) for a in json.load(f)["Achievements"]]
 
+
+# All Heroes Pack: Prozent des Einzelpreises der fehlenden Helden
+HERO_PACK_PERCENT = 70
 
 # Bling-Shop: Packs (SpecialPackSettings) und Preise, entschieden in
 # docs/analysis/special-packs.md; 67 nur während Halloween (bling_shop)
@@ -103,6 +108,12 @@ def fields():
         ("Competitions", "BlingPercent"): dict(Default=200, Min=0, Max=1000, Kind="data",
                                                Label="Competition blings (%)",
                                                Help="Top 3 of a competition. Original: 100 (25/10/5)"),
+        # Helden-Pack (bling_shop.HERO_PACK_ID): alle fehlenden Helden
+        ("HeroPack", "Percent"): dict(
+            Default=HERO_PACK_PERCENT, Min=0, Max=100, Kind="server",
+            Label="All Heroes Pack (% of the heroes' price)",
+            Help="Price = heroes still missing x 950 x %, rounded to 50 "
+                 "(3 missing: 2,000 instead of 2,850); 0 = not offered"),
     }
     for pid, price in SHOP_PACKS.items():
         out[("Shop", str(pid))] = dict(
@@ -319,6 +330,12 @@ def settings_bin(original, cv):
     """settings.bin mit den data-Werten cv (Bling-Mine, Objective-, Liga- und
     Wettbewerbs-Blings). Neu gepackt wird ab der ersten geänderten Datei."""
     content, _, _ = settings_archive.read(original)
+    return settings_archive.repack(original, edit_content(content, cv))
+
+
+def edit_content(content, cv):
+    """Archiv-Inhalt (mit CRC am Ende) mit den data-Werten cv; auch auf
+    schon geänderten Inhalt anwendbar (Level-60-Update, level60.py)."""
     edits = sorted((_file_span(content, name), fn) for name, fn in (
         (MINE_FILE, _mine_text), (SKU_FILE, _sku_text), (OBJECTIVE_FILE, _objective_text),
         (LEAGUE_FILE, _percent_text("Leagues.BlingPercent")),
@@ -329,7 +346,8 @@ def settings_bin(original, cv):
     for (begin, end), fn in edits:
         tail += content[pos:begin] + fn(content[begin:end], cv)
         pos = end
-    return settings_archive.replace_packed(original, first, tail + content[pos:-4])
+    body = content[:first] + tail + content[pos:-4]
+    return body + struct.pack("<I", zlib.crc32(body))
 
 
 def mine_rank(spec_id, spec):
@@ -395,6 +413,19 @@ def scale_reward(reward, section):
 
 
 # --- Bling-Shop --------------------------------------------------------------
+
+def hero_pack_price(prices):
+    """Preis des All Heroes Pack für die fehlenden Helden (Blings je Held):
+    Summe mal HeroPack.Percent, auf 50 gerundet; 0 = nicht im Angebot (aus,
+    Prozent 0 oder weniger als zwei Helden fehlen: einer allein kostet
+    seinen Einzelpreis im Spiel)."""
+    if not enabled() or len(prices) < 2:
+        return 0
+    pct = get("HeroPack", "Percent")
+    if not pct:
+        return 0
+    return max(50, int(sum(prices) * pct / 100 / 50 + 0.5) * 50)
+
 
 def shop_prices():
     """{Pack-Id: Blings} der angebotenen Packs (leer, wenn aus)."""

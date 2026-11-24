@@ -1,0 +1,5 @@
+LIBRARY xinput9_1_0
+EXPORTS
+    XInputGetState=_wasd_XInputGetState@8
+    XInputSetState=_wasd_XInputSetState@8
+    XInputGetCapabilities=_wasd_XInputGetCapabilities@12

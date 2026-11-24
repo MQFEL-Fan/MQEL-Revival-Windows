@@ -8,12 +8,14 @@ als eingesammelt meldet.
 """
 
 import copy
+import datetime
 import json
 import os
 import random
 import time
 
 import castles
+import community_events
 import item_drops
 from account_state import INVENTORY_SLOTS_PER_TAB
 import loot
@@ -21,6 +23,15 @@ import trophies
 
 T = castles.T
 
+
+
+def _bonus_materials(hero, c):
+    """Bonus-Zutaten aus der Ausrüstung; während "More Materials"
+    (community_events) doppelte Anzahl."""
+    out = item_drops.bonus_materials(hero, castles.castle_type(c) == castles.CASTLE_TYPE_USER)
+    if community_events.more_materials(datetime.datetime.now(datetime.timezone.utc)):
+        out = [(t, n * 2) for t, n in out]
+    return out
 
 
 # Gezielter Angriff: aus einem Profil (Freunde, News, Chat, Willkommensseite,
@@ -287,11 +298,15 @@ def start_attack(account, body, session, boosts=([], {}), delegated=None):
                       + rare_ratio)
         items = item_drops.creature_items(c, hero["HeroSpecContainerId"], magic_find,
                                            hero["Level"])
-        # Spielerburgen: zusätzlich Handwerksmaterial/Färbemittel
+        # Spielerburgen: zusätzlich Handwerksmaterial/Färbemittel; während
+        # "More Materials" (community_events) doppelt gewürfelt
         if castles.castle_type(c) == castles.CASTLE_TYPE_USER:
-            for eid, drops in item_drops.creature_consumables(
-                    c, account.get("BuildInfo", {}).get("Level", 1)).items():
-                items.setdefault(eid, []).extend(drops)
+            rolls = 2 if community_events.more_materials(
+                datetime.datetime.now(datetime.timezone.utc)) else 1
+            for _ in range(rolls):
+                for eid, drops in item_drops.creature_consumables(
+                        c, account.get("BuildInfo", {}).get("Level", 1)).items():
+                    items.setdefault(eid, []).extend(drops)
         event = castles.active_event(c)
         tr_item = (item_drops.event_treasure_item(event, c["Level"],
                                                   hero["HeroSpecContainerId"])
@@ -299,6 +314,14 @@ def start_attack(account, body, session, boosts=([], {}), delegated=None):
                        c, hero["HeroSpecContainerId"], hero["Level"])
     belt = attack_belt(hero)
     trap_items = _custom_trap_items(custom, hero["HeroSpecContainerId"])
+    # Dekorationen: kleine Gold-/Lebenskraft-Drops, selten Material, Bling-
+    # Kristalle selten 1 Bling (loot.decoration_loot); nicht in Übung,
+    # Validierung, Tutorial und Wettbewerben
+    if (practice or validation or delegated or c.get("IsTutorialCastle")
+            or body.get("ubisoftCompetitionId")):
+        deco_loot, deco_items = {}, {}
+    else:
+        deco_loot, deco_items = loot.decoration_loot(c, creature_loot, account, time.time())
     session.current = dict(castle=c, hero=hero["HeroSpecContainerId"],
                     hero_level=hero["Level"], resurrections=0,
                     attack_id="%024x" % random.getrandbits(96),
@@ -306,7 +329,8 @@ def start_attack(account, body, session, boosts=([], {}), delegated=None):
                     loot=creature_loot, treasure=(tr_gold, tr_lf),
                     items=items, treasure_item=tr_item, buildings=buildings,
                     material_mines=materials,
-                    trap_items=trap_items, validation=validation, practice=practice,
+                    trap_items=trap_items, deco_loot=deco_loot, deco_items=deco_items,
+                    validation=validation, practice=practice,
                     delegated=bool(delegated),
                     completion_reward=castles.validation_reward(delegated),
                     attack_type=body.get("attackType", 0),
@@ -340,7 +364,10 @@ def start_attack(account, body, session, boosts=([], {}), delegated=None):
             {"$type": T("DefenseIngredientLoot"), "Id": eid,
              "InventoryItems": items.get(eid, []), "PremiumCash": 0, **l}
             for eid, l in creature_loot.items()],
-        "DecorationLoot": [],
+        "DecorationLoot": [
+            {"$type": T("DefenseIngredientLoot"), "Id": did,
+             "InventoryItems": deco_items.get(did, []), **l}
+            for did, l in deco_loot.items()],
         "DefenderActiveConsumables": [],
         "DefenderSpecialPacks": [],
         "FirstResurrectionCost": resurrection_cost(hero["Level"], 0),
@@ -395,8 +422,8 @@ def start_attack(account, body, session, boosts=([], {}), delegated=None):
     }
 
 
-def _sum(cur, field, ids):
-    table = cur.get("loot") or {}
+def _sum(cur, field, ids, source="loot"):
+    table = cur.get(source) or {}
     return sum(table[i].get(field, 0) for i in set(ids or []) if i in table)
 
 
@@ -609,6 +636,12 @@ def end_attack(account, params, session):
     # Bling-Beute: der Client meldet keine eigene Id-Liste, Blings fallen
     # wie XP beim Töten an
     kills_blings = _sum(cur, "PremiumCash", params.get("KilledCreatureIds"))
+    # Dekorationen (loot.decoration_loot): aufgesammeltes Gold/Lebenskraft,
+    # Blings der Bling-Kristalle beim Zerstören (zählen zur Bling-Beute)
+    deco_gold = _sum(cur, "Gold", params.get("LootedGoldDecorationIds"), "deco_loot")
+    deco_lf = _sum(cur, "LifeForce", params.get("LootedLifeForceDecorationIds"), "deco_loot")
+    deco_blings = _sum(cur, "PremiumCash", params.get("DestroyedDecorationIds"), "deco_loot")
+    kills_blings += deco_blings
     if c.get("IsTutorialCastle"):
         # Tutorial: XP aller Kreaturen, auch bei Niederlage oder Abbruch (das
         # Tutorial geht trotzdem weiter). Danach soll der Held Level 2 haben
@@ -623,7 +656,8 @@ def end_attack(account, params, session):
     tr_gold = min(params.get("TreasureRoomLootedGold", 0), tr_gold_max)
     tr_lf = min(params.get("TreasureRoomLootedLifeForce", 0), tr_lf_max)
     looted = (_looted_items(cur, params.get("LootedHeroItemCreatureIds"))
-              + _looted_items(cur, params.get("LootedHeroItemTrapIds"), "trap_items"))
+              + _looted_items(cur, params.get("LootedHeroItemTrapIds"), "trap_items")
+              + _looted_items(cur, params.get("LootedHeroItemDecorationIds"), "deco_items"))
     # aufgesammelte Verbrauchsgüter stapeln wie Material
     items = [i for i in looted if i["$type"] != T("HeroConsumableItem")]
     dropped = [(i["TemplateId"], 1) for i in looted if i["$type"] == T("HeroConsumableItem")]
@@ -644,10 +678,13 @@ def end_attack(account, params, session):
     league_gold, league_lf = int(kills_gold * league_bonus), int(kills_lf * league_bonus)
     boost_lf = int((kills_lf + tr_lf) * boosts.get("LifeForce", 0))
     boost_xp = int(kills_xp * boosts.get("Xp", 0))
+    # Extra XP from equipment (e.g. the Infinite XP Ring, 26 %)
+    if hero and not cur.get("practice"):
+        boost_xp += int(kills_xp * item_drops.hero_effect(hero, item_drops.EXTRA_XP))
     gains = {"hero": cur.get("hero"), "items": items,
              "InGameCoin": (kills_gold + league_gold + tr_gold + boost_gold
-                            + mines["InGameCoin"]),
-             "LifeForce": kills_lf + league_lf + tr_lf + boost_lf + mines["LifeForce"],
+                            + mines["InGameCoin"] + deco_gold),
+             "LifeForce": kills_lf + league_lf + tr_lf + boost_lf + mines["LifeForce"] + deco_lf,
              "PremiumCash": mines["PremiumCash"] + kills_blings,
              "bling_loot": kills_blings,
              "Xp": kills_xp + boost_xp,
@@ -669,8 +706,7 @@ def end_attack(account, params, session):
              "consumables_used": _potions_used(params, hero["Level"] if hero else 1),
              # Bonus-Zutaten aus den Ausrüstungseffekten (nicht im Test)
              "materials": dropped + ([] if cur.get("practice") or hero is None
-                                     else item_drops.bonus_materials(
-                                         hero, castles.castle_type(c) == castles.CASTLE_TYPE_USER)),
+                                     else _bonus_materials(hero, c)),
              "destroyed": _destroyed(c, params)}
     # Kronen nach den Sternen (0 Sterne = Niederlage), nur Spielerburgen,
     # nicht bei Übung und gezielten Angriffen (trophies.settle)

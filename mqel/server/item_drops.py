@@ -34,6 +34,7 @@ import os
 import random
 
 import castles
+import level60
 import loot
 
 T = castles.T
@@ -140,7 +141,10 @@ def roll_item_level(castle_level, table_key="ItemLevelTable", hero_level=30):
     table = _drop_settings()[table_key]
     diff = _weighted([(-1, table["Minus1Level"]), (0, table["SameLevel"]),
                       (1, table["Plus1Level"])])
-    return max(1, min(30, hero_level, castle_level + diff))
+    # höchstens Helden-Level und Level-Cap (Level-60-Update: 60, sonst 30;
+    # Burgen der Region 10 (35-60) droppen Items ihres Levels)
+    top = level60.CAP if level60.ENABLED else level60.OLD_CAP
+    return max(1, min(top, hero_level, castle_level + diff))
 
 
 def _effect_level(item_level):
@@ -396,6 +400,7 @@ def event_treasure_item(event, castle_level, played_hero):
 # angelegten Teile summiert.
 
 MAGIC_FIND = 26
+EXTRA_XP = 24          # MagicalProperty "Extra XP" (Infinite XP Ring and random items)
 # Effekt -> (Zutaten-Qualität, Anzahl, nur Spielerburgen); Texte 15818-15821,
 # 16158 ("per player castle attack"); None = Zutat beliebiger Qualität
 BONUS_MATERIALS = {40: ("Basic", 3, False), 41: ("Exceptional", 1, False),

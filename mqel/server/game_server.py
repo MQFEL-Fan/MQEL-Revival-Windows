@@ -71,7 +71,53 @@ class WebsiteHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if self.headers.get("Range") and self._send_range():
+            return
         super().do_GET()
+
+    def end_headers(self):
+        # Videos (website/media): browsers and Discord stream and seek with
+        # Range requests (_send_range)
+        self.send_header("Accept-Ranges", "bytes")
+        super().end_headers()
+
+    def _send_range(self):
+        """206 Partial Content for "Range: bytes=a-b" on a file; False if
+        the request isn't a simple byte range on an existing file."""
+        m = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range", "").strip())
+        path = self.translate_path(self.path)
+        if not m or not os.path.isfile(path) or not (m.group(1) or m.group(2)):
+            return False
+        size = os.path.getsize(path)
+        if m.group(1):
+            start = int(m.group(1))
+            end = min(int(m.group(2)) if m.group(2) else size - 1, size - 1)
+        else:  # "bytes=-N": the last N bytes
+            start, end = max(0, size - int(m.group(2))), size - 1
+        if start > end or start >= size:
+            self.send_response(416)
+            self.send_header("Content-Range", "bytes */%d" % size)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return True
+        self.send_response(206)
+        self.send_header("Content-Type", self.guess_type(path))
+        self.send_header("Content-Range", "bytes %d-%d/%d" % (start, end, size))
+        self.send_header("Content-Length", str(end - start + 1))
+        self.end_headers()
+        with open(path, "rb") as f:
+            f.seek(start)
+            left = end - start + 1
+            try:
+                while left > 0:
+                    chunk = f.read(min(65536, left))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    left -= len(chunk)
+            except (BrokenPipeError, ConnectionResetError):  # player skipped ahead
+                pass
+        return True
 
     def list_directory(self, path):
         self.send_error(404)
@@ -91,10 +137,18 @@ import competitions
 import bling_shop
 import special_packs
 import steam_auth
+import community_events
+import discord_events
+import discord_patch_notes
 import free_trials
+import iplog
+import parties
+import raids
+import ingame_market
 import guilds
 import limits
 import leagues
+import presence
 import players
 import trophies
 import geoip
@@ -358,6 +412,45 @@ class GameHandler(BaseHTTPRequestHandler):
             "client": self.client_address[0],
         }
 
+        # Discord-Präsenz (presence.py): fragt der WASD-Helfer alle paar
+        # Sekunden ab, daher ohne Konsole und Log
+        if parts and parts[0] == "presence" and self.command == "GET":
+            status, data = presence.answer(self.server.players, parts[-1] if len(parts) > 1 else "",
+                                           self.client_address[0])
+            self.send_response(status)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
+        # Ingame Market und Update-Countdown (UI-Patch 16.): die Spiel-UI
+        # fragt regelmäßig, ohne Konsole und Log
+        if parts and parts[0] in ("market", "notice"):
+            self._market(parts, query, body_json)
+            return
+        if parts and parts[0] == "party":
+            self._party(parts, query, body_json)
+            return
+
+        # Online-Punkt der Freundesliste (presence.friends_online, UI-Patch
+        # 14.): fragt die Spiel-UI alle 30 s, ohne Konsole und Log
+        if parts == ["friends", "online"] and self.command == "GET":
+            try:
+                aid = int((query.get("a") or ["0"])[0])
+            except ValueError:
+                aid = 0
+            status, data = presence.friends_online(self.server.players, aid,
+                                                   self.client_address[0])
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
         # 1. Konsole (kompakt): das, was man beim Client-Test live braucht.
         q = f"?{logged_qs}" if parsed.query else ""
         b = body_text[:300].replace("\n", " ")
@@ -410,6 +503,9 @@ class GameHandler(BaseHTTPRequestHandler):
             player.tracker.track(player.account_id, tracking.CLIENT_HACK,
                                  anticheat.hack_fields(flags))
             print(f"    [anticheat] {player.name}: ClientHackFlags {flags}", flush=True)
+        presence.note(player, key, body_json, self.client_address[0])
+        raids.VIEWER.value = player.account_id  # raid castles for this player's party
+        self.server.iplog.seen(player.account_id, self.client_address[0])
         try:  # Header n = höchster beim Client verarbeiteter Notification-Index
             player.notifications.ack(int(self.headers.get("n", "0")))
         except ValueError:
@@ -719,8 +815,13 @@ class GameHandler(BaseHTTPRequestHandler):
                                        datetime.datetime.now(datetime.timezone.utc)
                                        .strftime("%Y-%m-%dT%H:%M:%SZ")):
                 # Der Client liest Guild und JoinerId (Leser 0x94a580)
-                notify.push("GuildMemberJoined", {"Guild": self.server.guilds.guild_info(gid),
-                                                  "JoinerId": me})
+                info = self.server.guilds.guild_info(gid)
+                notify.push("GuildMemberJoined", {"Guild": info, "JoinerId": me})
+                for m in (info or {}).get("Members") or []:
+                    mid = (m.get("AccountSummary") or {}).get("Id")
+                    other = self.server.players.by_account_id(mid) if mid and mid != me else None
+                    if other is not None:
+                        other.notifications.push("GuildMemberJoined", {"Guild": info, "JoinerId": me})
             payload = self.server.guilds.guild_info(gid) or {}
         elif key == "GuildService.hqs/RemoveMember":
             b = body_json if isinstance(body_json, dict) else {}
@@ -810,7 +911,15 @@ class GameHandler(BaseHTTPRequestHandler):
                                      {"CheatContext": anticheat.CHEAT_CONTEXT_END_ATTACK,
                                       "Message": msg})
                 print(f"    [anticheat] {player.name}: {msg}", flush=True)
+            raid = ((player.attack.current or {}).get("castle") or {}).get("_Raid")
+            raid_castle = ((player.attack.current or {}).get("castle") or {}).get("AccountId")
             payload, gains = attack.end_attack(state.snapshot(), params, player.attack)
+            if raid:
+                self.server.parties.raid_done(player.account_id, raid_castle)
+                try:
+                    self._raid_bonus(player, raid, gains)
+                except Exception as e:  # noqa: BLE001 - never break EndAttack
+                    print(f"    [raid] Bonus fehlgeschlagen: {e!r}", flush=True)
             # Kommentar des vorigen Angreifers (der eigene kommt erst mit RateCastle)
             payload["LastComment"] = self.server.castle_stats.last_comment(
                 gains["castle_id"], castles.T, state.account.get("ProfanityFiltering", False))
@@ -1218,7 +1327,9 @@ class GameHandler(BaseHTTPRequestHandler):
             (snap.get("CastleRerolls") or {}).get(str(region), 0),
             [f["Id"] for f in snap.get("Friends") or []], snap["AccountId"],
             competitions.current_ids(),
-            castles.validation_castles(snap["AccountId"], self._may_validate(snap)))
+            castles.validation_castles(snap["AccountId"], self._may_validate(snap)),
+            hero_level=next((h["Level"] for h in snap.get("Heroes") or []
+                             if h["HeroSpecContainerId"] == snap.get("SelectedHeroId")), None))
         boss = [payload["BossCastle"]] if payload["BossCastle"] else []
         for group in payload["CastlesByLevel"] + [{"Castles": boss}]:
             for c in group["Castles"]:
@@ -1357,6 +1468,8 @@ class GameHandler(BaseHTTPRequestHandler):
     def _bling_shop(self, parts, query, entry):
         token = (query.get("t") or [""])[0]
         p = self.server.players.for_token(token)  # nur angemeldete Spieler
+        if p is None:  # Bling-Shop im Spiel (UI-Patch 16.): Web-Token des Ingame Market
+            p = self.server.market.player_for(token)
         if p is None:
             self._send_text("Unbekannter Spieler.\n")
             entry["response"] = {"status": 200, "content_type": "text/plain",
@@ -1370,11 +1483,16 @@ class GameHandler(BaseHTTPRequestHandler):
                 pid = int((query.get("id") or ["0"])[0])
             except ValueError:
                 pid = 0
-            price = dict(bling_shop.offers(patcher.seasonal_event(datetime.date.today()))).get(pid)
+            if pid == bling_shop.HERO_PACK_ID:
+                price = (bling_shop.hero_pack(p.state.missing_heroes()) or (None,))[0]
+            else:
+                price = dict(bling_shop.offers(
+                    patcher.seasonal_event(datetime.date.today()))).get(pid)
             if price is None:
                 message = "This pack is not offered."
             else:
-                result = p.state.buy_special_pack(pid, price)
+                result = (p.state.buy_hero_pack(price) if pid == bling_shop.HERO_PACK_ID
+                          else p.state.buy_special_pack(pid, price))
                 for name, fields in p.state.take_pack_events():
                     p.notifications.push(name, fields)
                 if result == "ok":
@@ -1386,6 +1504,8 @@ class GameHandler(BaseHTTPRequestHandler):
                                  "shop unlocks.",
                            "owned": "You already own this pack.",
                            "blings": "Not enough blings."}[result]
+                if pid == bling_shop.HERO_PACK_ID and result == "ok":
+                    message = "Purchased. Your new heroes are ready in the hero selection."
         elif catalog:
             pass  # kostenlose Test-Buchungen nur ohne Bling-Wirtschaft
         elif parts[-1] == "buy":
@@ -1440,7 +1560,8 @@ class GameHandler(BaseHTTPRequestHandler):
             data = bling_shop.catalog_page(
                 account.get("DisplayName"), token, account["Wallet"]["PremiumCash"],
                 account.get("SpecialPacks", []),
-                patcher.seasonal_event(datetime.date.today()), message).encode("utf-8")
+                patcher.seasonal_event(datetime.date.today()), message,
+                bling_shop.hero_pack(p.state.missing_heroes())).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(data)))
@@ -1541,6 +1662,10 @@ class GameHandler(BaseHTTPRequestHandler):
                     return {"Error": "name_invalid"}
                 if taken or auth_.has_password(name):
                     return {"Error": "name_taken"}
+                others = self.server.iplog.may_register(self.client_address[0])
+                if others:  # schon ein Account von dieser IP (nicht freigegeben)
+                    self.server.iplog.refused(self.client_address[0], name, others)
+                    return {"Error": "multi_account"}
                 auth_.set_password(name, password)
                 players.get(name, self.client_address[0])  # Account anlegen
             elif not known:
@@ -1555,6 +1680,7 @@ class GameHandler(BaseHTTPRequestHandler):
                 auth_.link_steam(name, str(body["proof"]))
         except auth.AuthError as e:
             return {"Error": str(e)}
+        self.server.iplog.seen(players.index.get(name), self.client_address[0])
         return {"Token": auth_.login(name), "Name": name}
 
     def _launcher_steam(self, entry):
@@ -1598,11 +1724,16 @@ class GameHandler(BaseHTTPRequestHandler):
         taken = lambda n: (n in players.index or auth_.has_password(n)
                            or any(x.casefold() == n.casefold() for x in players.index))
         name = steam_auth.account_name(steam_auth.persona(steam_id), steam_id, taken)
+        others = self.server.iplog.may_register(self.client_address[0])
+        if others:
+            self.server.iplog.refused(self.client_address[0], name, others)
+            return {"Error": "multi_account"}
         try:
             auth_.steam_create(name, proof)
         except auth.AuthError as e:
             return {"Error": str(e)}
         players.get(name, self.client_address[0])  # Account anlegen
+        self.server.iplog.seen(players.index.get(name), self.client_address[0])
         return {"Token": auth_.login(name), "Name": name}
 
     def _launcher_session(self, name):
@@ -1614,6 +1745,7 @@ class GameHandler(BaseHTTPRequestHandler):
         if name in self.server.players.index and self._sanction_error(name):
             return self._sanction_error(name)
         self.server.players.get(name, self.client_address[0])
+        self.server.iplog.seen(self.server.players.index.get(name), self.client_address[0])
         return {"Token": auth_.login(name), "Name": name}
 
     def _sanction_error(self, name):
@@ -1771,6 +1903,185 @@ class GameHandler(BaseHTTPRequestHandler):
         entry["response"] = {"status": status, "content_type": "application/json",
                              "preview": type_name}
 
+    def _market_reply(self, status, obj):
+        data = json.dumps(obj, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        # marker for the UI mods (ingame_market.html, party.html): they only
+        # keep an address whose reply carries it, so another program on
+        # 127.0.0.1:8081 of the player's PC isn't taken for this server
+        self.send_header("X-MQEL", "1")
+        self.send_header("Access-Control-Expose-Headers", "X-MQEL")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _market(self, parts, query, body):
+        """/notice (Update-Countdown) und /market/<action> (ingame_market.py).
+        Aktionen per POST mit JSON {"w": Web-Token, ...}."""
+        market = self.server.market
+        q = {k: v[0] for k, v in query.items()}
+        args = dict(q, **(body if isinstance(body, dict) else {}))
+        action = parts[1] if len(parts) > 1 else ""
+        if parts[0] == "notice":
+            return self._market_reply(200, self.server.notice.get())
+        if action == "icon":  # Item-Icons (das Spiel hat für die meisten keine Web-Kopie)
+            path = ingame_market.icon_file("/".join(parts[2:]))
+            if not path:
+                self.send_response(404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            with open(path, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        try:
+            if action == "session":
+                try:
+                    aid = int(args.get("a") or 0)
+                except ValueError:
+                    aid = 0
+                token = market.session(aid, self.client_address[0])
+                if not token:
+                    return self._market_reply(403, {"Error": "Start the game to use the Ingame Market and parties."})
+                p = self.server.players.by_account_id(aid)
+                return self._market_reply(200, {"w": token, "Unlocked": market.unlocked(p.state.snapshot()),
+                                            "Shop": "/blings?t=" + token,
+                                            "Notice": self.server.notice.get()})
+            aid = market.account_for(args.get("w"))
+            if not aid:
+                return self._market_reply(401, {"Error": "Session expired: close and reopen the window."})
+            account_state.SOURCE.value = "ingame-market"
+            if action == "overview":
+                out = market.overview(aid)
+            elif action == "items":
+                out = market.items_market(aid, args.get("category", ""), args.get("class", ""),
+                                      args.get("q", ""), args.get("currency", ""), args.get("sort", "ending"),
+                                      args.get("desc") in ("1", "true", 1, True))
+            elif action == "materials":
+                out = market.materials_market(args.get("q", ""))
+            elif self.command != "POST":
+                return self._market_reply(405, {"Error": "POST only"})
+            elif action == "sell_item":
+                out = market.sell_item(aid, args.get("slot"), args.get("start"), args.get("buyNow"),
+                                   args.get("currency"), args.get("hours", 24))
+            elif action == "bid":
+                out = market.bid(aid, args.get("id"), args.get("amount"))
+            elif action == "buy_now":
+                out = market.buy_now(aid, args.get("id"))
+            elif action == "cancel":
+                out = market.cancel(aid, args.get("id"))
+            elif action == "sell_material":
+                out = market.sell_material(aid, args.get("templateId"), args.get("qty"),
+                                       args.get("price"), args.get("currency"))
+            elif action == "buy_material":
+                out = market.buy_material(aid, args.get("templateId"), args.get("qty"),
+                                      args.get("price"), args.get("currency"))
+            elif action == "collect":
+                out = market.collect(aid, args.get("which"))
+            elif action == "sort_inventory":  # lobby inventory sort (lobby_mods.html)
+                out = market.sort_inventory(aid, args.get("tab", 0), args.get("by", "type"),
+                                        args.get("desc") in ("1", "true", 1, True))
+            else:
+                return self._market_reply(404, {"Error": "Unknown action"})
+        except ValueError as e:  # GEError und Prüfungen der Kontodaten
+            return self._market_reply(400, {"Error": str(e)})
+        if self.command == "POST":
+            print(f"    [market] {action} by {aid}: {json.dumps(out)[:200]}", flush=True)
+        return self._market_reply(200, out)
+
+    def _party(self, parts, query, body):
+        """/party/<action> (parties.py): GET state; POST invite/accept/
+        decline/leave/kick/live. Same web token as the Ingame Market."""
+        args = dict({k: v[0] for k, v in query.items()}, **(body if isinstance(body, dict) else {}))
+        action = parts[1] if len(parts) > 1 else "state"
+        aid = self.server.market.account_for(args.get("w"))
+        if not aid:
+            return self._market_reply(401, {"Error": "Session expired: close and reopen the window."})
+        pt, players_ = self.server.parties, self.server.players
+
+        def online(m):
+            p = next((x for x in list(players_.players.values()) if x.account_id == m), None)
+            return presence.online(p)
+
+        def raid_of(m):
+            p = next((x for x in list(players_.players.values()) if x.account_id == m), None)
+            c = ((getattr(p, "attack", None) and p.attack.current) or {}).get("castle") or {}
+            return c.get("AccountId") if raids.is_raid(c.get("AccountId")) else None
+        try:
+            if action == "state":
+                out = pt.view(aid, online, raid_of)
+                out["HomeRegion"] = raids.home_region(players_.by_account_id(aid).state.snapshot())
+            elif action == "raids":   # castles the leader can pick (raids.menu)
+                raids.VIEWER.value = aid
+                out = {"Raids": raids.menu(aid)}
+            elif self.command != "POST":
+                return self._market_reply(405, {"Error": "POST only"})
+            elif action == "invite":
+                out = pt.invite(aid, int(args.get("target") or 0))
+                target = players_.by_account_id(int(args.get("target") or 0))
+            elif action == "accept":
+                out = pt.accept(aid, args.get("party"))
+            elif action == "decline":
+                out = pt.decline(aid, args.get("party"))
+            elif action == "leave":
+                out = pt.leave(aid)
+            elif action == "kick":
+                out = pt.kick(aid, int(args.get("target") or 0))
+            elif action == "live":
+                pt.report(aid, args)
+                out = pt.view(aid, online, raid_of)
+            elif action == "select":
+                cid = int(args.get("castle") or 0)
+                if not raids.is_raid(cid):
+                    return self._market_reply(400, {"Error": "Not a raid castle."})
+                seed, _, _ = raids.seed_and_size(aid)
+                c = raids.castle(cid, aid)
+                out = pt.select_raid(aid, cid, seed, c["Level"], c["AccountDisplayName"])
+            elif action == "ready":
+                out = pt.ready(aid, str(args.get("yes", "1")) not in ("0", "false", "False"))
+            else:
+                return self._market_reply(404, {"Error": "Unknown action"})
+        except ValueError as e:
+            return self._market_reply(400, {"Error": str(e)})
+        if action not in ("state", "live", "raids"):
+            print(f"    [party] {action} by {aid}: {json.dumps(out)[:160]}", flush=True)
+        return self._market_reply(200, out)
+
+    def _raid_bonus(self, player, raid, gains):
+        """Co-op raid cleared: when every party member has cleared this raid
+        castle, each gets the party bonus (raids.bonus)."""
+        if gains.get("completion_type") != 0 or gains.get("practice"):
+            return
+        key = "%d/%d" % (raid["Seed"], raid["Tier"])
+        members = self.server.parties.record_clear(player.account_id, key)
+        if not members:
+            return
+        import item_drops  # noqa: PLC0415
+        gold, lf, mats = raids.bonus(raid["Tier"], len(members))
+        for m in members:
+            p = self.server.players.by_account_id(m)
+            if p is None:
+                continue
+            delta = p.state.admin_wallet({"InGameCoin": gold, "LifeForce": lf})
+            notifications.wallet_updated(p.notifications, delta)
+            items = [("material", item_drops.material_item(q)["TemplateId"], 1)
+                     for q, n in mats for _ in range(n)]
+            for name, fields in p.state.admin_give(items):
+                p.notifications.push(name, fields)
+            self.server.parties.bonus[m] = {
+                "Tier": raid["Tier"], "Gold": gold, "LifeForce": lf, "Items": len(items)}
+        print(f"    [raid] Party-Bonus Raid {key} fuer {members}", flush=True)
+
     def _send_text(self, text: str):
         data = text.encode("utf-8")
         self.send_response(200)
@@ -1812,6 +2123,27 @@ class GameHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, t, i, h, rnd, n, g, v")
         self.end_headers()
+
+
+def _notice_watch(srv):
+    """Geplantes Update (Admin "Schedule update"): zur Zeit schließt die UI
+    das Spiel selbst; der Server beendet dann alle Sitzungen (einmal)."""
+    done = None
+    while True:
+        time.sleep(5)
+        try:
+            at = (srv.notice.get() or {}).get("At")
+            if at and at <= time.time() and done != at:
+                done = at
+                # no logout of the sessions any more: the game closes itself
+                # (WASD helper /quit) and a kept session lets Steam players
+                # back in at the first launcher start (the logout made them
+                # start the launcher twice, 2026-11-22)
+                print("[notice] Update-Zeit erreicht", flush=True)
+                # erledigt: nach dem Neustart nicht noch einmal alle abmelden
+                srv.notice.cancel()
+        except Exception as e:  # noqa: BLE001
+            print(f"[notice] {e}", flush=True)
 
 
 class GameHTTPServer(ThreadingHTTPServer):
@@ -1927,12 +2259,20 @@ def main():
     ap.add_argument("--free-trial", type=int, default=None, choices=sorted(free_trials.HEROES),
                     help="Helden-Trial ab heute erzwingen (Held 2 Ritter, 3 Bogenschützin, "
                          "4 Magier, 5 Runaway; sonst nach Datum, free_trials.py)")
+    ap.add_argument("--boost-event", type=int, default=None, choices=[0, 21, 22, 23, 24, 25, 26],
+                    help="Boost-Wochenende ab heute erzwingen (Test): 21 Gold, 22 Lebenskraft, "
+                         "23 XP, 24 Magic Find, 25 Bling-Mine, 26 Material-Minen, 0 alle "
+                         "(sonst nach Kalender, community_events.py)")
     ap.add_argument("--free-trial-minutes", type=int, default=None,
                     help="erzwungenes Trial endet so viele Minuten nach dem "
                          "Serverstart (Test des Ablaufs)")
     ap.add_argument("--client-exe", default=None,
                     help="Spiel-Exe, die der Patcher als MightyQuest.exe verteilt "
                          "(z. B. gepatchte MightyQuest_profile.exe, tools/patch_ca.py)")
+    ap.add_argument("--keep-unknown-versions", action="store_true",
+                    help="installierte Paketstände, die dieser Server nicht kennt (Client "
+                         "von einem anderen Server gepatcht), als aktuell melden statt "
+                         "sie zu überspringen/patchen")
     ap.add_argument("--web-port", type=int, default=None,
                     help="Projektseite aus website/ auf eigenem Port (z. B. 80)")
     ap.add_argument("--web-tls-port", type=int, default=None,
@@ -1958,7 +2298,9 @@ def main():
     srv.responses_path = args.responses
     patcher.FORCED_EVENT = args.seasonal_event
     patcher.CLIENT_EXE = args.client_exe
+    patcher.KEEP_UNKNOWN_VERSIONS = args.keep_unknown_versions
     free_trials.FORCED_HERO = args.free_trial
+    community_events.FORCED_BOOST = args.boost_event
     if args.free_trial and args.free_trial_minutes:
         free_trials.FORCED_END = (datetime.datetime.now(datetime.timezone.utc)
                                   + datetime.timedelta(minutes=args.free_trial_minutes)
@@ -1982,7 +2324,10 @@ def main():
     website.write()
     srv.admin_nets = args.admin_net
     srv.admin_keys = admin.load_keys(os.path.join(state_dir, "admin_hmac.json"))
-    srv.news = news.News(os.path.join(state_dir, "news.json"))
+    # News im Webtool -> Patch-Note-Kanal auf Discord (discord_patch_notes.py)
+    srv.news = news.News(os.path.join(state_dir, "news.json"),
+                         discord_patch_notes.NewsNotifier(
+                             state_dir, log=lambda m: print(m, flush=True)))
     server_stats.CPU.start()  # Mittelwerte für den Server-Tab im Webtool
     srv.admin = admin.AdminService(srv.players, srv.guilds,
                                    os.path.join(state_dir, "maintenance.json"),
@@ -1991,6 +2336,20 @@ def main():
         os.path.join(state_dir, "competitions.json"), log=log)
     srv.castle_stats = castle_stats.CastleStats(
         os.path.join(state_dir, "castle_stats.json"), log=log)
+    # Discord: Cornelius kündigt jedes Event an (discord_events.py, Webhook)
+    discord_events.start(state_dir, log=lambda m: print(m, flush=True))
+    # Ingame Market (ingame_market.py, UI-Patch 16.) und Update-Countdown
+    srv.market = ingame_market.Market(state_dir, srv.players, log=log)
+    srv.notice = ingame_market.Notice(state_dir)
+    srv.admin.notice = srv.notice
+    srv.admin.market = srv.market
+    # Parties und Co-op-Raids (parties.py, raids.py, UI-Patch 17.)
+    srv.parties = parties.Parties(os.path.join(state_dir, "parties.json"), srv.players, log=log)
+    # IP je Account, Mehrfach-Accounts nur von freigegebenen IPs (iplog.py)
+    srv.iplog = iplog.IpLog(os.path.join(state_dir, "ip_log.json"), log=log)
+    srv.admin.iplog = srv.iplog
+    raids.PARTIES, raids.PLAYERS = srv.parties, srv.players
+    threading.Thread(target=_notice_watch, args=(srv,), daemon=True).start()
     print(f"Account-Profil: {args.profile} ({state_dir}, "
           f"{len(srv.players.index)} Spieler)", flush=True)
     if not srv.players.auth.has_admins():

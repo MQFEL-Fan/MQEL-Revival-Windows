@@ -152,9 +152,12 @@ class Guilds:
             g = self.guilds.get(guild_id)
             if not g or self.guild_of(account_id):
                 return False
-            if g.get("RecruitmentMode") != 2:
-                self.log(f"    [guild] Clan {guild_id}: Beitrittsanfragen fehlen noch")
+            if g.get("RecruitmentMode") == 3:  # Closed
+                self.log(f"    [guild] Clan {guild_id} ist geschlossen")
                 return False
+            # JoinRequest (1): Anfragen mit Annahme durch den Anführer sind
+            # nicht umgesetzt (Clan-Fenster nativ, Format unbekannt) -> wie
+            # ImmediateJoin aufnehmen
             g["Members"].append({"AccountId": account_id, "Title": "Member",
                                  "JoinDate": now})
             self._save()

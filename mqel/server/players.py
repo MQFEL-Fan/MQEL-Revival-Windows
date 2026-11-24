@@ -90,12 +90,16 @@ class Players:
 
     def get(self, token, ip=None):
         """Spieler zum Login-Name; ein neuer Name legt einen Account an, mit
-        dem Land der IP des Clients (geoip)."""
+        dem Land der IP des Clients (geoip). Mit ip folgt CountryCode
+        bestehender Accounts dem Land, aus dem sich der Spieler meldet (Flagge
+        in Clan, Freunden, Ranglisten); lokale/unbekannte IPs ändern nichts."""
         # außerhalb der Sperre: das erste Nachschlagen lädt die Datenbank
-        country = geoip.country(ip) if ip and token not in self.index else None
+        country = geoip.country(ip) if ip else None
         with self.lock:
             p = self.players.get(token)
             if p is not None:
+                if country:
+                    p.state.set_country(country)
                 return p
             account_id = self.index.get(token)
             is_new = account_id is None
@@ -109,6 +113,8 @@ class Players:
                                  profile=self.profile,
                                  account_id=account_id, country=country)
             p = self.players[token] = Player(token, state, self.tracker)
+            if country and not is_new:
+                state.set_country(country)
             if is_new:
                 self.tracker.track(account_id, tracking.ACCOUNT_CREATION,
                                    {"CountryCode": country or ""})

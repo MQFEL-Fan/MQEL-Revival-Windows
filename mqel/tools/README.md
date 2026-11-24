@@ -22,3 +22,9 @@ Hinweise:
   `docs/*.md` die kuratierte Spezifikation.
 - `patch_ui.py [GameData]` – alle Client-UI-Patches lokal anwenden (Regeln in `server/ui_patches.py`; Spieler bekommen sie über den Launcher, Paket GameUI; Backups `*.orig`, gepatcht wird immer vom Original): Wettbewerbs-Popup "Castle's level" aus CastleLevel, Spalte "Reward" der Wettbewerbs-Rangliste, Schmiede-Hinweis beim Einlegen der angelegten Waffe, Freundes-News (Klassenname je Sprache übersetzt, englische Grammatik), Tausendertrenner bei der Bling-Zähl-Animation im Hauptmenü.
 - `client_members.py <exe> Klasse…` – listet die JSON-Member, die der Client-Leser einer Klasse erwartet (Update3-Binary); mit `-t` zusätzlich den JSON-Typ je Feld (int/float/bool/string/date/object/array/int-array, sonst typ-eigener Leser = meist Enum).
+
+## Level-60 update / settings archive
+
+- `apply_level60.py`: writes the level-60 gameplay settings (`server/level60.py`) into the loose JSONs the server reads (`--check`, `--restore`); see `docs/90-level60.md`.
+- `settings_dump.py`: lists, prints or extracts the files inside `settings.bin` / `settings2.bin`.
+- `jsonshape.py`: prints the structure (keys, list lengths) of a JSON file.

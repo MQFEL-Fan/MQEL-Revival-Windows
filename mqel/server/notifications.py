@@ -121,7 +121,10 @@ class NotificationQueue:
             n = {"$type": T(type_name + "Notification"),
                  "Index": self.last_index,
                  "NotificationType": NOTIFICATION_TYPE.get(type_name, type_name)}
-            n.update(fields)
+            # wrapper fields win: an event field named Index/NotificationType
+            # would break the client's running numbering (it drops "seen"
+            # indices and waits forever, see ShowMoreCastle 2026-11-20)
+            n.update({k: v for k, v in fields.items() if k not in n})
             self.pending.append(n)
         if self.on_push is not None:
             self.on_push(type_name, fields)

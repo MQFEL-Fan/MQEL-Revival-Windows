@@ -1,0 +1,543 @@
+{
+    "AttackUserSettings": {
+        "MinHeroItemQualityToPickUp": 0,
+        "UseCameraDamping": true
+    },
+    "AudioAmbienceEnable": true,
+    "AudioMasterVolumeRatio": 1.0,
+    "AudioMusicEnable": true,
+    "AudioSfxEnable": true,
+    "AudioVoiceEnable": true,
+    "AutoFireOnDirectModeEnabled": true,
+    "IsWindowMaximized": false,
+    "ProfanityFilteringEnable": false,
+    "RuntimeConfiguration": "",
+    "ShortcutsDictionary": {
+        "DirectedAbility": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 225,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                },
+                {
+                    "Key": 44,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "OrbitGameCameraRight": {
+            "ControllerShortcuts": [
+                7
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 79,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                },
+                {
+                    "Key": 8,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Attack": {
+            "ControllerShortcuts": [
+                0
+            ],
+            "KeyboardShortcuts": [],
+            "MouseShortcuts": []
+        },
+        "ToggleVideoCapture": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 68,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "CancelAttack": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 41,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability1": {
+            "ControllerShortcuts": [
+                2
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 30,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability2": {
+            "ControllerShortcuts": [
+                3
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 31,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability3": {
+            "ControllerShortcuts": [
+                1
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 32,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability4": {
+            "ControllerShortcuts": [
+                14
+            ],
+            "KeyboardShortcuts": [],
+            "MouseShortcuts": [
+                {
+                    "MouseButton": 1,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ]
+        },
+        "Ability5": {
+            "ControllerShortcuts": [
+                11,
+                13
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 21,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability6": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 34,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability7": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 35,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Ability8": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 36,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "LockTarget": {
+            "ControllerShortcuts": [
+                12
+            ],
+            "KeyboardShortcuts": [],
+            "MouseShortcuts": []
+        },
+        "ToggleEditionMode": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 8,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "MoveWithoutAttacking": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 224,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Exit": {
+            "ControllerShortcuts": [
+                10
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 41,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote1": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 30,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote2": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 31,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote3": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 32,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote4": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 33,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote5": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 34,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote6": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 35,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote7": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 36,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "Emote8": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 37,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 4
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildAction1": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 30,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildAction2": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 31,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildAction3": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 32,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildAction4": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 33,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildAction5": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 34,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                },
+                {
+                    "Key": 76,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 1
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildEntityTweakingTool": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 226,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                },
+                {
+                    "Key": 230,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildingShortcutCorneliusEmporium": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 58,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildingShortcutPotionBrewery": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 59,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildingShortcutBlackSmith": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 60,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildingShortcutCreatureHatchery": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 61,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "BuildingShortcutArchitectOffice": {
+            "ControllerShortcuts": [],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 62,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 1,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        },
+        "OrbitGameCameraLeft": {
+            "ControllerShortcuts": [
+                5
+            ],
+            "KeyboardShortcuts": [
+                {
+                    "Key": 80,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                },
+                {
+                    "Key": 20,
+                    "CanStillBeTriggeredWithShiftPressedA": false,
+                    "IgnoredModifiers": 2,
+                    "IsGrabbable": true,
+                    "RequiredModifiers": 0
+                }
+            ],
+            "MouseShortcuts": []
+        }
+    },
+    "ShortcutsDictionaryVersion": 26,
+    "ShortcutsInstantCast": true,
+    "StopContinuousMoveOnClickRelease": false,
+    "WindowHeight": 720,
+    "WindowWidth": 1280
+}

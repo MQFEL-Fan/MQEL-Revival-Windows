@@ -292,3 +292,53 @@ def record_bling_loot(account, amount, now):
     if amount:
         log.append([int(now), amount])
     account[BLING_LOOT] = log
+
+
+# --- Decoration drops (2026-11-22, docs/88-decoration-loot.md) -----------------
+# The client spawns AttackInfo.DecorationLoot when a decoration is destroyed
+# (AllowDecorationLoot, switched on by level60.attacker_rewards) and reports
+# what was picked up (LootedGold/LifeForce/HeroItemDecorationIds); blings
+# count when the decoration is destroyed (DestroyedDecorationIds).
+
+DECO_CHANCE = 0.75               # chance per decoration (not crystals) for a small gold/life force drop
+DECO_AMOUNT = (0.20, 0.50)       # of an average creature's gold/life force in this castle (always less)
+DECO_ITEM_CHANCE = 0.004         # rare: a basic crafting material instead (~1 in 250)
+BLING_CRYSTALS = {237, 238}      # DEC_000_Bling_Crystal_01/02 (green)
+CRYSTAL_BLING_CHANCE = 0.01      # 1 bling, at most CRYSTAL_BLING_MAX per attack
+CRYSTAL_BLING_MAX = 2
+
+
+def decoration_loot(castle, creature_loot, account, now, rng=random):
+    """({Decoration-Id: DefenseIngredientLoot fields}, {Decoration-Id: [items]}).
+    Bling crystals: 1% for 1 bling each, at most 2 per attack, within the
+    weekly bling loot cap (only with the bling economy on)."""
+    import item_drops  # noqa: PLC0415 (item_drops imports loot)
+    gold = [x["Gold"] for x in creature_loot.values() if x.get("Gold")]
+    lf = [x["LifeForce"] for x in creature_loot.values() if x.get("LifeForce")]
+    avg_gold = sum(gold) / len(gold) if gold else 5
+    avg_lf = sum(lf) / len(lf) if lf else 5
+    chance = DECO_CHANCE
+    blings_left = (min(CRYSTAL_BLING_MAX, bling_loot_left(account, now))
+                   if balance.enabled() else 0)
+    out, items = {}, {}
+    for room in castle.get("Rooms") or []:
+        for d in room.get("Decorations") or []:
+            entry = {"Gold": 0, "LifeForce": 0, "Xp": 0, "HealthOrbFragments": 0, "PremiumCash": 0}
+            if d.get("SpecContainerId") in BLING_CRYSTALS:
+                # Bling Crystal: only its bling chance, no gold/life force
+                if blings_left > 0 and rng.random() < CRYSTAL_BLING_CHANCE:
+                    entry["PremiumCash"] = 1
+                    blings_left -= 1
+                    out[d["Id"]] = entry
+                continue
+            r = rng.random()
+            if r < DECO_ITEM_CHANCE:
+                items[d["Id"]] = [item_drops.material_item("Basic")]
+            elif r < chance:
+                if rng.random() < 0.5:
+                    entry["Gold"] = max(1, round(avg_gold * rng.uniform(*DECO_AMOUNT)))
+                else:
+                    entry["LifeForce"] = max(1, round(avg_lf * rng.uniform(*DECO_AMOUNT)))
+            if entry["Gold"] or entry["LifeForce"] or entry["PremiumCash"] or d["Id"] in items:
+                out[d["Id"]] = entry
+    return out, items

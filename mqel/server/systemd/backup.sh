@@ -4,7 +4,7 @@
 # mqel-backup.service). Alte Stände löscht eine Lifecycle-Regel im R2-Bucket.
 # Die Spielstände werden atomar ersetzt (os.replace), Packen im Betrieb ist sicher.
 set -eu
-src=/opt/mqel/server/state
+src=/path/mqel/mqelrevival/server/state/
 name="mqel-state-$(date -u +%Y%m%d-%H%M%S).tar.gz"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

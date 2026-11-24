@@ -257,3 +257,148 @@ def replace_packed(blob, offset, new_tail):
     ip, done = max((c for c in cuts if c[1] <= offset), key=lambda c: c[1])
     stream = packed[:ip] + lzo_compress(body, done)
     return crypt(stream + struct.pack("<I", len(body)), decrypt=False)
+
+
+def file_spans(content):
+    """{path: (begin, end)} of every file's JSON text in the archive
+    content (as returned by read(), CRC at the end). path =
+    "<folder>/<subfolder...>/<file name as stored>", e.g.
+    "GameplaySettings/Abilities/000068 - VolleyOfArrows/ABILITIES/.../GAMEPLAY.JSON"
+    (the last part keeps the archive's backslashes)."""
+    out = {}
+    pos = 0
+
+    def cstr():
+        nonlocal pos
+        end = content.index(b"\0", pos)
+        s = content[pos:end]
+        pos = end + 1
+        return s, end
+
+    def folder(prefix):
+        nonlocal pos
+        name = cstr()[0].decode("latin1")
+        path = prefix + name + "/" if name else prefix
+        n = struct.unpack_from("<I", content, pos)[0]
+        pos += 4
+        for _ in range(n):
+            fname = cstr()[0].decode("latin1")
+            begin = pos
+            _, end = cstr()
+            out[path + fname] = (begin, end)
+        n = struct.unpack_from("<I", content, pos)[0]
+        pos += 4
+        for _ in range(n):
+            folder(path)
+
+    folder("")
+    return out
+
+
+def files(content):
+    """{path: JSON bytes} of every file in the archive content."""
+    return {p: content[b:e] for p, (b, e) in file_spans(content).items()}
+
+
+def splice(content, new_files):
+    """Archive content with the files in new_files ({path: bytes}) replaced;
+    the CRC at the end is recomputed. Files can change size (the format has
+    no lengths, only NUL terminators); no NUL bytes allowed in the texts."""
+    spans = file_spans(content)
+    parts, pos = [], 0
+    for path, (begin, end) in sorted(spans.items(), key=lambda x: x[1][0]):
+        if path in new_files:
+            data = new_files[path]
+            if b"\0" in data:
+                raise ValueError("settings: NUL in %s" % path)
+            parts += [content[pos:begin], data]
+            pos = end
+    unknown = set(new_files) - set(spans)
+    if unknown:
+        raise KeyError("settings: unknown files %s" % sorted(unknown)[:3])
+    body = b"".join(parts) + content[pos:-4]
+    return body + struct.pack("<I", zlib.crc32(body))
+
+
+def repack(blob, new_content):
+    """Archive file for new_content, reusing the packed stream of blob up to
+    the first changed byte (small launcher deltas when the change is late)."""
+    content = read(blob)[0]
+    n = min(len(content), len(new_content)) - 4
+    first = 0
+    while first < n and content[first] == new_content[first]:
+        first += 1
+    if new_content == content:
+        return blob
+    return replace_packed(blob, first, new_content[first:-4])
+
+
+def tree(content):
+    """Archive content as a folder tree: {"name", "files": [[name, data]],
+    "subs": [folders]} (CRC at the end of content is ignored)."""
+    pos = 0
+
+    def cstr():
+        nonlocal pos
+        end = content.index(b"\0", pos)
+        s = content[pos:end]
+        pos = end + 1
+        return s
+
+    def folder():
+        nonlocal pos
+        node = {"name": cstr(), "files": [], "subs": []}
+        n = struct.unpack_from("<I", content, pos)[0]
+        pos += 4
+        for _ in range(n):
+            name = cstr()
+            node["files"].append([name, cstr()])
+        n = struct.unpack_from("<I", content, pos)[0]
+        pos += 4
+        for _ in range(n):
+            node["subs"].append(folder())
+        return node
+
+    return folder()
+
+
+def build(node):
+    """Archive content (with CRC) from a tree()."""
+    out = []
+
+    def folder(n):
+        out.append(n["name"] + b"\0")
+        out.append(struct.pack("<I", len(n["files"])))
+        for name, data in n["files"]:
+            out.append(name + b"\0" + data + b"\0")
+        out.append(struct.pack("<I", len(n["subs"])))
+        for s in n["subs"]:
+            folder(s)
+
+    folder(node)
+    body = b"".join(out)
+    return body + struct.pack("<I", zlib.crc32(body))
+
+
+def add_files(content, new_files):
+    """Archive content with new files added; paths like files(): the parts
+    before the last are folders (created if missing, appended after the
+    existing ones), the last part is the stored file name."""
+    root = tree(content)
+    for path in sorted(new_files):
+        parts = path.split("/")
+        if parts[0].encode("latin1") != root["name"]:
+            raise KeyError("settings: %s is not under %r" % (path, root["name"]))
+        node = root
+        for name in parts[1:-1]:
+            raw = name.encode("latin1")
+            sub = next((s for s in node["subs"] if s["name"] == raw), None)
+            if sub is None:
+                sub = {"name": raw, "files": [], "subs": []}
+                node["subs"].append(sub)
+            node = sub
+        fname = parts[-1].encode("latin1")
+        if any(f[0] == fname for f in node["files"]):
+            raise KeyError("settings: %s exists" % path)
+        node["files"].append([fname, new_files[path]])
+    return build(root)

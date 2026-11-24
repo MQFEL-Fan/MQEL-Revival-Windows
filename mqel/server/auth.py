@@ -136,6 +136,20 @@ class Auth:
     def steam_id(self, name):
         return self.users.get(name, {}).get("SteamId")
 
+    def set_steam(self, name, steam_id):
+        """SteamID (SteamID64, 17 digits) to the account name, set by an admin
+        (web tool LinkSteam, tools/link_steam.py) without the launcher's ticket
+        check. A SteamID belongs to at most one account."""
+        steam_id = str(steam_id).strip()
+        if not re.fullmatch(r"7656119\d{10}", steam_id):
+            raise AuthError("steam_id_invalid")
+        with self.lock:
+            other = self._by_steam(steam_id)
+            if other not in (None, name):
+                raise AuthError("steam_taken:" + other)
+            self.users.setdefault(name, {})["SteamId"] = steam_id
+            self._save()
+
     def unlink_steam(self, name):
         """SteamID vom Account lösen (Webtool); True, wenn eine da war."""
         with self.lock:
